@@ -18,14 +18,19 @@ public class SceneManager {
     public static void setStage(Stage stage) {
         mainStage = stage;
     }
+    
 
+    /**
+     * Switches the content of the main window (full view change, e.g.
+     * main-view -> comparison-view if you go the "swap center" route).
+     */
     public static void switchTo(String fxmlPath) throws IOException {
         FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(
                 SceneManager.class.getResource(fxmlPath)
         ));
 
         Parent root = loader.load();
-        Scene scene = new Scene(root, 1125, 650);    // My personal default
+        Scene scene = new Scene(root, 650, 650);    // My personal default
         // Scene scene = new Scene(root);
         // scene.setFill(Color.TRANSPARENT);
         mainStage.setScene(scene);
