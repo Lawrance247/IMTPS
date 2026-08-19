@@ -9,7 +9,7 @@ import utils.SceneManager;
  * JavaFX App
  */
 public class App extends Application {
-    public final static TaskManager TaskManager = new TaskManager(new TaskDB());
+    public final static TaskManager taskManager = new TaskManager(new TaskDB());
 
     public static void main(String[] args){
         launch(args);
