@@ -121,6 +121,7 @@ public class TaskFormController {
             String description = taskDescription.getText();
             Category category = Category.valueOf(categoryComboBox.getValue().toUpperCase());
 
+            //deadline
             LocalDate date = deadlinePicker.getValue();
             LocalTime time = LocalTime.of(hourSpinner.getValue(), minuteSpinner.getValue());
             LocalDateTime deadline = LocalDateTime.of(date, time);
