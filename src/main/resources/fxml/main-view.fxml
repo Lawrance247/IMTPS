@@ -44,7 +44,8 @@
     <center>
         <TableView fx:id="taskTable">
             <columns>
-                <TableColumn fx:id="nameColumn" prefWidth="200" text="Task" />
+                <TableColumn fx:id="nameColumn" prefWidth="110.0" text="Task" />
+            <TableColumn fx:id="descriptionColumn" prefWidth="110.0" text="Description" />
                 <TableColumn fx:id="categoryColumn" prefWidth="110" text="Category" />
                 <TableColumn fx:id="deadlineColumn" prefWidth="110" text="Deadline" />
                 <TableColumn fx:id="durationColumn" prefWidth="110" text="Duration (hrs)" />
@@ -63,9 +64,8 @@
                 <Insets bottom="8" left="16" right="16" top="8" />
             </padding>
             <Label fx:id="taskCountLabel" text="0 tasks" />
-            <Label fx:id="statusLabel" text="" />
             <Region HBox.hgrow="ALWAYS" />
-         <Button fx:id="generateScheduleBtn" mnemonicParsing="false" onAction="#handleStrategyGeneration" text="Generate Schedule" />
+            <Label fx:id="statusLabel" text="" />
         </HBox>
     </bottom>
 

@@ -59,6 +59,9 @@ public class MainController {
     private Label taskCountLabel;
 
     @FXML
+    private TableColumn<?, ?> descriptionColumn;
+
+    @FXML
     private TableView<?> taskTable;
 
     @FXML

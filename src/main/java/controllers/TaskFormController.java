@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 
 import app.App;
 import javafx.collections.FXCollections;
@@ -19,8 +18,9 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
-import  models.Task;
-import utils.Category;
+import javafx.scene.paint.Color;
+import models.Task;
+import  utils.Category;
 import utils.Effort;
 import utils.Priority;
 import utils.SceneManager;
@@ -99,14 +99,7 @@ public class TaskFormController {
 
     @FXML
     void handleCancel(ActionEvent event) {
-        System.out.println("going out");
         try {
-          List<Task> tasks = App.taskManager.getAllTasks();
-
-        for(Task t : tasks){
-            System.out.println(t.toString());
-        }
-
         SceneManager.switchTo("/fxml/main-view.fxml");
 
         } catch (IOException e) {
@@ -142,12 +135,22 @@ public class TaskFormController {
                 priority,
                 effort
             );
-
-            System.out.println("Task added");
+            errorLabel.setText("Task added successfully.");
+            errorLabel.setTextFill(Color.GREEN);
+            //System.out.println("Task added");
             //SceneManager.switchTo("/fxml/task-form.fxml");
         }catch(Exception e){
-            e.printStackTrace();
+            //let user know task was not added to db
+            errorLabel.setText("Task not added error occured. Please try again.");
+            errorLabel.setTextFill(Color.RED);
+            //e.printStackTrace();
         }
+    }
+
+    private void resetFields(){
+        nameField.setText("");
+        taskDescription.setText("");
+        categoryComboBox.setPromptText("");
     }
 
 }
