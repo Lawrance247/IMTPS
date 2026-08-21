@@ -13,9 +13,9 @@ import models.Task;
 import strategies.SchedulingStrategy;
 public class Scheduler {
 
-    private final SchedulingStrategy strategy;
-    private final LocalTime dailyStartTime;
-    private final LocalTime dailyEndTime;
+    private SchedulingStrategy strategy;
+    private LocalTime dailyStartTime;
+    private LocalTime dailyEndTime;
 
     /**
      * Creates a scheduler with:
@@ -39,6 +39,26 @@ public class Scheduler {
         }
 
         this.strategy = strategy;
+        this.dailyStartTime = dailyStartTime;
+        this.dailyEndTime = dailyEndTime;
+    }
+
+    public void setStrategy(SchedulingStrategy strategy){
+        if (strategy == null) {
+            throw new IllegalArgumentException("Scheduling strategy cannot be null.");
+        }
+
+        this.strategy = strategy;
+    }
+
+    public void setAvailability(LocalTime dailyStartTime, LocalTime dailyEndTime){
+        if (dailyStartTime == null || dailyEndTime == null) {
+            throw new IllegalArgumentException("Daily availability times cannot be null.");
+        }
+
+        if (!dailyStartTime.isBefore(dailyEndTime)) {
+            throw new IllegalArgumentException("Daily start time must be before daily end time.");
+        }
         this.dailyStartTime = dailyStartTime;
         this.dailyEndTime = dailyEndTime;
     }

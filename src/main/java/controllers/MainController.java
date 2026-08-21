@@ -19,6 +19,7 @@ import models.Schedule;
 import models.ScheduledTask;
 import models.Task;
 import services.Scheduler;
+import strategies.EarliestDeadlineFirstStrategy;
 import strategies.WeightedFocusStrategy;
 import utils.Category;
 import utils.Effort;
@@ -89,13 +90,22 @@ public class MainController {
 
       Schedule schedule = scheduler.generateSchedule(createTasks(), LocalDateTime.now());
 
+      EarliestDeadlineFirstStrategy EDFstrategy = new EarliestDeadlineFirstStrategy();
+      Scheduler EDFscheduler = new Scheduler(EDFstrategy, LocalTime.of(8, 0), LocalTime.of(22, 0));
+
+      Schedule EDFschedule = scheduler.generateSchedule(createTasks(), LocalDateTime.now());      
+
       //display schedule on CL
       System.out.println();
       List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
       for(ScheduledTask t : scheduledTasks){
        System.out.println(t.toString());
       }
-      System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d", schedule.getDeadlineClashCount(), schedule.getTotalScheduledMinutes(), schedule.getTaskCount());
+      System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d\n", schedule.getDeadlineClashCount(), schedule.getTotalScheduledMinutes(), schedule.getTaskCount());
+      System.out.println();
+
+      List<ScheduledTask> EDFScheduledTasks = EDFschedule.getScheduledTasks();
+
       // ==== END OF TEMPORAL SECTION ====
     }
 
