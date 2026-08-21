@@ -19,9 +19,10 @@ import models.Schedule;
 import models.ScheduledTask;
 import models.Task;
 import services.Scheduler;
-import strategies.EarliestDeadlineFirstStrategy;
+import strategies.WeightedFocusStrategy;
 import utils.Category;
 import utils.Effort;
+import utils.FocusMode;
 import utils.Priority;
 import utils.SceneManager;
 public class MainController {
@@ -83,15 +84,16 @@ public class MainController {
 
       // ===== TEMPORAL SECTION FOR TESTING =====
       //create a schedule
-      EarliestDeadlineFirstStrategy EDFStrategy = new EarliestDeadlineFirstStrategy();
-      Scheduler scheduler = new Scheduler(EDFStrategy, LocalTime.of(8, 0), LocalTime.of(18, 0));
+      WeightedFocusStrategy strategy = new WeightedFocusStrategy(FocusMode.FAMILY);
+      Scheduler scheduler = new Scheduler(strategy, LocalTime.of(8, 0), LocalTime.of(22, 0));
 
-      Schedule schedule = scheduler.generateSchedule(createTasks(), LocalDateTime.of(2026, 8, 22, 8, 0));
+      Schedule schedule = scheduler.generateSchedule(createTasks(), LocalDateTime.now());
 
       //display schedule on CL
+      System.out.println();
       List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
       for(ScheduledTask t : scheduledTasks){
-        System.out.println(t.toString());
+       System.out.println(t.toString());
       }
       System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d", schedule.getDeadlineClashCount(), schedule.getTotalScheduledMinutes(), schedule.getTaskCount());
       // ==== END OF TEMPORAL SECTION ====
@@ -145,7 +147,7 @@ public class MainController {
               "Attend family meeting",
               Category.FAMILY,
               LocalDateTime.of(2026, 8, 23, 10, 0),
-              660,
+              60,
               Priority.HIGH,
               Effort.LOW
       ));
@@ -156,7 +158,7 @@ public class MainController {
               "Go for a run",
               Category.HEALTH,
               LocalDateTime.of(2026, 8, 22, 11, 0),
-              340,
+              45,
               Priority.MEDIUM,
               Effort.MEDIUM
       ));
@@ -172,6 +174,15 @@ public class MainController {
               Effort.LOW
       ));
 
+      tasks.add(new Task(
+              "Write Code",
+              "Finish Capstone assignment.",
+              Category.ACADEMIC,
+              LocalDateTime.of(2026, 8, 23, 16, 0),
+              120,
+              Priority.MEDIUM,
+              Effort.MEDIUM
+      ));
       return tasks;
   }
 }

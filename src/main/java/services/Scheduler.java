@@ -68,8 +68,7 @@ public class Scheduler {
         List<ScheduledTask> scheduledTasks = new ArrayList<>();
 
         // First available point from which to schedule.
-        LocalDateTime nextAvailableTime =
-                moveToNextAvailableTime(schedulingStart);
+        LocalDateTime nextAvailableTime = moveToNextAvailableTime(schedulingStart);
 
         // The scheduler assigns every task a start and end time..
         for (Task task : prioritisedTasks) {

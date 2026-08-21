@@ -1,12 +1,9 @@
 package models;
+
+import utils.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.UUID;
-
-import utils.Category;
-import utils.Effort;
-import utils.Priority;
-import utils.TaskStatus;  // Universal Unique Id (128 bit values, type String): exmaple f47ac10b-58cc-4372-a567-0e02b2c3d479
+import java.util.UUID;  // Universal Unique Id (128 bit values, type String): exmaple f47ac10b-58cc-4372-a567-0e02b2c3d479
 
 
 
@@ -34,11 +31,12 @@ public class Task
         this.deadline = deadline;
         this.importance = importance;
         this.effort = effort;
-        this.durationMinutes = durationMinutes;
-        this.status = TaskStatus.TO_DO;
+        this.durationMinutes = durationMinutes; 
+
+        this.status = TaskStatus.TO_DO; // new task defaults to TO_DO
     }
 
-    public boolean overdue()
+    public boolean isOverdue()
     {
         return (status != TaskStatus.DONE && deadline.isBefore(LocalDateTime.now()));
     }
@@ -121,8 +119,8 @@ public class Task
     @Override
     public String toString()
     {
-        return "Task{id=\" + id + \", title='\" + title + \"', status=\" + status + \", deadline=\" + deadline + \"}";
+        return "Task{id=" + id + ", title='" + title + "', status=" + status + ", deadline=" + deadline + "}";
+    
     }
 
 }
-
