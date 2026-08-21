@@ -2,8 +2,7 @@ package models;
 
 
 /**
- * Represents one task after the scheduler has assigned
- * a start and end time.
+ * Represents one task after the scheduler has assigned a start and end time.
  */
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -44,8 +43,7 @@ public class ScheduledTask {
   }
 
   /**
-   * Number of minutes between the task's end time
-   * and its deadline.
+   * Number of minutes between the task's end time and its deadline.
    *
    * Positive = completed before deadline.
    * Zero     = completes exactly at deadline.

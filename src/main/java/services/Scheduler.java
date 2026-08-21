@@ -45,13 +45,12 @@ public class Scheduler {
 
     /**
      * Generates a complete time-based schedule.
-     *
-     * The strategy determines the priority order of tasks.
-     * The scheduler then assigns every task a start and end time.
-     *
      * Tasks are NOT removed when they cause problems.
      * Instead, the generated schedule records those problems
      * so that they can later be reported and compared.
+     *@param tasks tasks to schedule
+     *@param schedulingStart The time to start scheduling at.
+     *
      */
     public Schedule generateSchedule(List<Task> tasks, LocalDateTime schedulingStart) {
 
@@ -72,7 +71,7 @@ public class Scheduler {
         LocalDateTime nextAvailableTime =
                 moveToNextAvailableTime(schedulingStart);
 
-        // Schedule EVERY task.
+        // The scheduler assigns every task a start and end time..
         for (Task task : prioritisedTasks) {
             // Find the next available scheduling position.
             LocalDateTime taskStart = findNextSchedulingTime(nextAvailableTime, task.getDurationMinutes());
@@ -93,11 +92,11 @@ public class Scheduler {
 
     /**
      * Finds the next position where a task can be placed.
-     *
+     * If there is not enough time remaining today, the task is moved to the next day's availability window.
      * A task is never rejected.
-     *
-     * If there is not enough time remaining today,
-     * the task is moved to the next day's availability window.
+     *@param startingPoint task start time.
+     *@param durationMinutes task's duration.
+     * 
      */
     private LocalDateTime findNextSchedulingTime(LocalDateTime startingPoint, int durationMinutes) {
 
@@ -106,13 +105,9 @@ public class Scheduler {
         long dailyAvailableMinutes = Duration.between(dailyStartTime, dailyEndTime).toMinutes();
 
         /*
-            * If a task is longer than the whole daily window,
-            * we still schedule it.
-            *
-            * It will automatically be reported as problematic
-            * because it extends outside the normal availability
-            * window.
-            */
+         * If a task is longer than the whole daily window, we still schedule it.
+         * It will automatically be reported as problematic because it extends outside the normal availabilitywindow.
+         */
         if (durationMinutes > dailyAvailableMinutes) {
             return candidate;
         }
@@ -135,8 +130,8 @@ public class Scheduler {
     }
 
     /**
-     * Ensures that the given time is inside the daily
-     * scheduling window.
+     * Ensures that the given time is inside the daily scheduling window.
+     * @param dateTime The date and time to be check.
      */
     private LocalDateTime moveToNextAvailableTime(LocalDateTime dateTime) {
         LocalDate date = dateTime.toLocalDate();

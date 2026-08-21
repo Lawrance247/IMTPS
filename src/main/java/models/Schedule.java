@@ -1,17 +1,22 @@
-  /**
-   * Represents the complete generated schedule.
-   */
 package models;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
+/**
+ * Represents the complete generated schedule.
+ */
 public class Schedule {
-
+  /**
+   * Stores the list of scheduled tasks
+   */
   private final List<ScheduledTask> scheduledTasks;
 
+  /**
+   * @scheduledTasks The list of scheduled tasks.
+   * 
+   */
   public Schedule(List<ScheduledTask> scheduledTasks) {
 
     this.scheduledTasks = Collections.unmodifiableList(new ArrayList<>(scheduledTasks));

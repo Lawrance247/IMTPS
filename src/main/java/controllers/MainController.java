@@ -133,7 +133,7 @@ public class MainController {
               "Study Java",
               "Study for the test",
               Category.ACADEMIC,
-              LocalDateTime.of(2026, 8, 22, 11, 0),
+              LocalDateTime.of(2026, 8, 23, 11, 0),
               180,
               Priority.MEDIUM,
               Effort.MEDIUM
@@ -144,8 +144,8 @@ public class MainController {
               "Family meeting",
               "Attend family meeting",
               Category.FAMILY,
-              LocalDateTime.of(2026, 8, 22, 10, 0),
-              60,
+              LocalDateTime.of(2026, 8, 23, 10, 0),
+              660,
               Priority.HIGH,
               Effort.LOW
       ));
@@ -156,7 +156,7 @@ public class MainController {
               "Go for a run",
               Category.HEALTH,
               LocalDateTime.of(2026, 8, 22, 11, 0),
-              300,
+              340,
               Priority.MEDIUM,
               Effort.MEDIUM
       ));
@@ -166,7 +166,7 @@ public class MainController {
               "Gaming",
               "Play games",
               Category.LEISURE,
-              LocalDateTime.of(2026, 8, 22, 16, 0),
+              LocalDateTime.of(2026, 8, 23, 16, 0),
               120,
               Priority.LOW,
               Effort.LOW
