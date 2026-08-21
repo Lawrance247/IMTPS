@@ -20,9 +20,9 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import models.Task;
-import  utils.Category;
+import utils.Category;
 import utils.Effort;
-import utils.Priority;
+import  utils.Priority;
 import utils.SceneManager;
 
 public class TaskFormController {

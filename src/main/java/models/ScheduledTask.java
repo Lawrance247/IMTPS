@@ -54,4 +54,11 @@ public class ScheduledTask {
   public long getDeadlineSlackMinutes() {
     return Duration.between(endTime, task.getDeadline()).toMinutes();
   }
+
+  @Override
+  public String toString(){
+    String taskString = this.task.getTitle()+" | Category" + this.task.getCategory()+ " | Deadline:" + this.task.getDeadline() + " | Start Time:" + this.startTime + " | End Time:" + this.endTime;
+
+    return taskString;
+  }
 }
