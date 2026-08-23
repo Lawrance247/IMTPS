@@ -14,8 +14,8 @@ import strategies.SchedulingStrategy;
 public class Scheduler {
 
     private SchedulingStrategy strategy;
-    private LocalTime dailyStartTime;
-    private LocalTime dailyEndTime;
+    private final LocalTime dailyStartTime;
+    private final LocalTime dailyEndTime;
 
     /**
      * Creates a scheduler with:
@@ -51,18 +51,6 @@ public class Scheduler {
         this.strategy = strategy;
     }
 
-    public void setAvailability(LocalTime dailyStartTime, LocalTime dailyEndTime){
-        if (dailyStartTime == null || dailyEndTime == null) {
-            throw new IllegalArgumentException("Daily availability times cannot be null.");
-        }
-
-        if (!dailyStartTime.isBefore(dailyEndTime)) {
-            throw new IllegalArgumentException("Daily start time must be before daily end time.");
-        }
-        this.dailyStartTime = dailyStartTime;
-        this.dailyEndTime = dailyEndTime;
-    }
-
     /**
      * Generates a complete time-based schedule.
      * Tasks are NOT removed when they cause problems.
@@ -83,7 +71,7 @@ public class Scheduler {
         }
 
         // The strategy determines the priority/order.
-        List<Task> prioritisedTasks = strategy.generateSchedule(new ArrayList<>(tasks));
+        List<Task> prioritisedTasks = strategy.generateSchedule(new ArrayList<>(tasks), schedulingStart);
 
         List<ScheduledTask> scheduledTasks = new ArrayList<>();
 

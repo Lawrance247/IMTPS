@@ -35,4 +35,10 @@ public class ScheduleMetrics {
   public double getFocusAlignment() {
     return focusAlignment;
   }
+
+  @Override
+  public String toString(){
+    String metrics = "Deadline Clash: "+this.deadlineClashes+", Total Lateness: "+this.totalLateness+", Average Slack: "+this.averageSlack+", Weighted Lateness: "+this.weightedLateness+", Focus Alignment: "+this.focusAlignment;
+    return metrics;
+  }
 }

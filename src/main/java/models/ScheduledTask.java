@@ -55,7 +55,7 @@ public class ScheduledTask {
 
   @Override
   public String toString(){
-    String taskString = this.task.getTitle()+" | Category" + this.task.getCategory()+ " | Deadline:" + this.task.getDeadline() + " | Start Time:" + this.startTime + " | End Time:" + this.endTime;
+    String taskString = this.task.getTitle()+" | Category: " + this.task.getCategory()+ " | Deadline: " + this.task.getDeadline() + " | Start Time: " + this.startTime + " | End Time:" + this.endTime;
 
     return taskString;
   }

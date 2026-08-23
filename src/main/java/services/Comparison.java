@@ -35,27 +35,26 @@ public class Comparison {
     for (ScheduledTask scheduledTask : schedule.getScheduledTasks()) {
 
       long slack = scheduledTask.getDeadlineSlackMinutes();
+      totalSlack += slack;
 
-      /*
-        * Negative slack means the task finishes
-        * after its deadline.
-        */
+      
+      // Negative slack means the task finishes after its deadline.
       if (slack < 0) {
 
         long lateness = -slack;
 
         totalLateness += lateness;
 
+        // How badly did the schedule fail when we consider how important the late tasks were? -> low is better.
         weightedLateness += lateness * scheduledTask.getTask().getImportance().getWeight();
 
-      } else {
-        totalSlack += slack;
       }
     }
 
     int taskCount = schedule.getTaskCount();
 
-    double averageSlack = taskCount == 0 ? 0 : (double) totalSlack / taskCount;
+    // how much spare time on average a task has before its deadline? -> higher is better.
+    double averageSlack = (taskCount == 0) ? 0 : (double) totalSlack / taskCount;
 
     double focusAlignment = calculateFocusAlignment(schedule);
 
@@ -67,12 +66,7 @@ public class Comparison {
       return 0;
     }
 
-      /*
-        * Consider the first half of the schedule.
-        *
-        * This lets us measure whether the strategy
-        * puts focus-relevant tasks earlier.
-        */
+    // Consider the first half of the schedule. This lets us measure whether the strategy puts focus-relevant tasks earlier.
     int earlyTaskCount = Math.max(1, (int) Math.ceil(schedule.getTaskCount() / 2.0));
 
     double totalImportance = 0;
@@ -82,19 +76,19 @@ public class Comparison {
 
     for (int i = 0; i < earlyTaskCount; i++) {
 
-        Task task = tasks.get(i).getTask();
+      Task task = tasks.get(i).getTask();
 
-        double importance = task.getImportance().getWeight();
+      double importance = task.getImportance().getWeight();
 
-        totalImportance += importance;
+      totalImportance += importance;
 
-        if (task.getCategory().name().equals(focusMode.name())) {
-          focusImportance += importance;
-        }
+      if (task.getCategory().name().equals(focusMode.name())) {
+        focusImportance += importance;
+      }
     }
 
     if (totalImportance == 0) {
-        return 0;
+      return 0;
     }
 
     return (focusImportance / totalImportance) * 100;
