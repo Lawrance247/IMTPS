@@ -84,14 +84,14 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
      */
     private double calculateUrgencyScore(Task task, LocalDateTime referenceTime) {
 
-        LocalDateTime now = LocalDateTime.now();
+        // LocalDateTime now = referenceTime;
 
         // Overdue tasks receive the highest urgency.
-        if (task.getDeadline().isBefore(now)) {
+        if (task.getDeadline().isBefore(referenceTime)) {
             return 3;
         }
 
-        Duration remaining = Duration.between(now, task.getDeadline());
+        Duration remaining = Duration.between(referenceTime, task.getDeadline());
 
         long hoursRemaining = remaining.toHours();
 

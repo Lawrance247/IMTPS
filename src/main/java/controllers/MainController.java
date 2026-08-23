@@ -2,10 +2,12 @@ package controllers;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import app.App;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -15,17 +17,11 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import models.ComparisonResult;
 import models.Schedule;
 import models.ScheduledTask;
 import models.Task;
-import services.Comparison;
-import services.Scheduler;
-import strategies.EarliestDeadlineFirstStrategy;
-import strategies.WeightedFocusStrategy;
 import utils.Category;
 import utils.Effort;
-import utils.FocusMode;
 import utils.Priority;
 import utils.SceneManager;
 public class MainController {
@@ -34,37 +30,31 @@ public class MainController {
     private Button addTaskButton;
 
     @FXML
-    private TableColumn<?, ?> categoryColumn;
-
-    @FXML
     private Button compareButton;
 
     @FXML
-    private TableColumn<?, ?> deadlineColumn;
+    private TableColumn<ScheduledTask, String> deadlineColumn;
 
     @FXML
     private Button deleteTaskButton;
 
     @FXML
-    private TableColumn<?, ?> durationColumn;
-
-    @FXML
     private Button editTaskButton;
-
-    @FXML
-    private TableColumn<?, ?> effortColumn;
 
     @FXML
     private ComboBox<String> focusModeComboBox;
 
     @FXML
-    private Button generateScheduleBtn;
+    private TableColumn<ScheduledTask, String> importanceColumn;
 
     @FXML
-    private TableColumn<?, ?> importanceColumn;
+    private TableColumn<ScheduledTask, String> nameColumn;
 
     @FXML
-    private TableColumn<?, ?> nameColumn;
+    private TableColumn<ScheduledTask, String> scheduledEndColumn;
+
+    @FXML
+    private TableColumn<ScheduledTask, String> scheduledStartColumn;
 
     @FXML
     private Label statusLabel;
@@ -73,10 +63,7 @@ public class MainController {
     private Label taskCountLabel;
 
     @FXML
-    private TableColumn<?, ?> descriptionColumn;
-
-    @FXML
-    private TableView<?> taskTable;
+    private TableView<ScheduledTask> taskTable;
 
     @FXML
     void initialize() {
@@ -84,49 +71,78 @@ public class MainController {
       ObservableList<String> modes = FXCollections.observableArrayList("ACADEMIC", "FAMILY", "LEISURE", "HEALTH");
       focusModeComboBox.setItems(modes);
 
+      List<Task> allTasks = createTasks();
 
-      // ===== TEMPORAL SECTION FOR TESTING =====
-      //create a WFS schedule
-      WeightedFocusStrategy strategy = new WeightedFocusStrategy(FocusMode.LEISURE);
-      Scheduler scheduler = new Scheduler(strategy, LocalTime.of(8, 0), LocalTime.of(18, 0));
-      Schedule schedule = scheduler.generateSchedule(createTasks(), LocalDateTime.of(2026, 8, 28, 8, 0));
+      // List<Task> allTasks = App.taskManager.getAllTasks();
 
-      //create an EDF schedule
-      EarliestDeadlineFirstStrategy EDFstrategy = new EarliestDeadlineFirstStrategy();
-      scheduler.setStrategy(EDFstrategy);
-      Schedule EDFschedule = scheduler.generateSchedule(createTasks(), LocalDateTime.of(2026, 8, 28, 8, 0));
+      if(!allTasks.isEmpty()){
+        Schedule schedule = App.scheduler.generateSchedule(allTasks, LocalDateTime.of(2026, 8, 28, 8, 0)); //make the schedulingStart dynamic
 
-
-      //display schedule on CL
-      System.out.println("\nWeighted Focus Strategy");
-      List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
-      List<ScheduledTask> clashes = schedule.getDeadlineClashes();
-
-      for(ScheduledTask t : scheduledTasks){
-       System.out.println(t.toString());
-      }
-      System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d\n", schedule.getDeadlineClashCount(), schedule.getTotalScheduledMinutes(), schedule.getTaskCount());
-      System.out.println("Clashes:");
-      for(ScheduledTask t : clashes){
-       System.out.println(t.toString());
+        List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
+        setUpScheduleTable(scheduledTasks);
+        taskCountLabel.setText(scheduledTasks.size() + " Tasks");
       }
 
-      System.out.println("\nEarliest Deadline First Strategy");
-      List<ScheduledTask> EDFScheduledTasks = EDFschedule.getScheduledTasks();
-      for(ScheduledTask t : EDFScheduledTasks){
-        System.out.println(t.toString());
-      }
 
-      System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d\n", EDFschedule.getDeadlineClashCount(), EDFschedule.getTotalScheduledMinutes(), EDFschedule.getTaskCount());
-      System.out.println();
+//       // ===== TEMPORAL SECTION FOR TESTING =====
+//       //create a WFS schedule
+//       WeightedFocusStrategy strategy = new WeightedFocusStrategy(FocusMode.LEISURE);
+//       Scheduler scheduler = new Scheduler(strategy, LocalTime.of(8, 0), LocalTime.of(18, 0));
+//       Schedule schedule = scheduler.generateSchedule(createTasks(), LocalDateTime.of(2026, 8, 28, 8, 0));
 
-      //Comparison
-      Comparison comparisonService = new Comparison(schedule, EDFschedule, FocusMode.LEISURE);
-      ComparisonResult compResults = comparisonService.compare();
-      System.out.printf("WFS ---> %s\n", compResults.getScheduleAMetrics().toString());
-      System.out.printf("EDFS --> %s\n",compResults.getScheduleBMetrics().toString());
+//       //create an EDF schedule
+//       EarliestDeadlineFirstStrategy EDFstrategy = new EarliestDeadlineFirstStrategy();
+//       scheduler.setStrategy(EDFstrategy);
+//       Schedule EDFschedule = scheduler.generateSchedule(createTasks(), LocalDateTime.of(2026, 8, 28, 8, 0));
 
-      // ==== END OF TEMPORAL SECTION ====
+
+//       //display schedule on CL
+//       System.out.println("\nWeighted Focus Strategy");
+//       List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
+//       List<ScheduledTask> clashes = schedule.getDeadlineClashes();
+
+//       for(ScheduledTask t : scheduledTasks){
+//        System.out.println(t.toString());
+//       }
+//       System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d\n", schedule.getDeadlineClashCount(), schedule.getTotalScheduledMinutes(), schedule.getTaskCount());
+//       System.out.println("Clashes:");
+//       for(ScheduledTask t : clashes){
+//        System.out.println(t.toString());
+//       }
+
+//       System.out.println("\nEarliest Deadline First Strategy");
+//       List<ScheduledTask> EDFScheduledTasks = EDFschedule.getScheduledTasks();
+//       for(ScheduledTask t : EDFScheduledTasks){
+//         System.out.println(t.toString());
+//       }
+
+//       System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d\n", EDFschedule.getDeadlineClashCount(), EDFschedule.getTotalScheduledMinutes(), EDFschedule.getTaskCount());
+//       System.out.println();
+
+//       //Comparison
+//       Comparison comparisonService = new Comparison(schedule, EDFschedule, FocusMode.LEISURE);
+//       ComparisonResult compResults = comparisonService.compare();
+//       System.out.printf("WFS ---> %s\n", compResults.getScheduleAMetrics().toString());
+//       System.out.printf("EDFS --> %s\n",compResults.getScheduleBMetrics().toString());
+
+//       // ==== END OF TEMPORAL SECTION ====
+
+
+    }
+
+    private void setUpScheduleTable(List<ScheduledTask> schedule){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
+        nameColumn.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getTask().getTitle()) );
+
+        importanceColumn.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getTask().getImportance().toString()) );
+
+        deadlineColumn.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getTask().getDeadline().format(formatter)) );
+
+        scheduledStartColumn.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getStartTime().format(formatter)) );
+
+        scheduledEndColumn.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getEndTime().format(formatter)) );
+
+        taskTable.setItems( FXCollections.observableArrayList(schedule) );     
     }
 
     @FXML
