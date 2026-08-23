@@ -1,13 +1,13 @@
 package strategies;
 
-import utils.FocusMode;
-import models.Task;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+
+import models.Task;
+import utils.FocusMode;
 
 public class WeightedFocusStrategy implements SchedulingStrategy {
 
@@ -24,7 +24,7 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public List<Task> generateSchedule(List<Task> tasks) {
+    public List<Task> generateSchedule(List<Task> tasks, LocalDateTime referenceTime) {
 
         // Create a copy so the original task list is not changed.
         List<Task> schedule = new ArrayList<>(tasks);
@@ -32,7 +32,7 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
         // Higher weighted scores are scheduled first.
         schedule.sort(
             Comparator
-                .comparingDouble(this::calculateScore)
+                .<Task>comparingDouble(task -> calculateScore(task, referenceTime))
                 .reversed()
         );
 
@@ -48,11 +48,11 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
      * 3. Urgency
      * 4. Effort
      */
-    private double calculateScore(Task task) {
+    private double calculateScore(Task task, LocalDateTime referenceTime) {
 
         double focusScore = calculateFocusScore(task);
         double importanceScore = task.getImportance().getWeight();
-        double urgencyScore = calculateUrgencyScore(task);
+        double urgencyScore = calculateUrgencyScore(task, referenceTime);
         double effortScore = task.getEffort().getWeight();
 
         return (focusScore * FOCUS_WEIGHT)
@@ -82,7 +82,7 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
      * 2 = moderately urgent
      * 1 = less urgent
      */
-    private double calculateUrgencyScore(Task task) {
+    private double calculateUrgencyScore(Task task, LocalDateTime referenceTime) {
 
         LocalDateTime now = LocalDateTime.now();
 

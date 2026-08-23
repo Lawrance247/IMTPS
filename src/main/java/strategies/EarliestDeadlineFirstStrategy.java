@@ -1,15 +1,15 @@
 package strategies;
 
-import models.Task;
-
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import models.Task;
 public class EarliestDeadlineFirstStrategy implements SchedulingStrategy {
 
     @Override
-    public List<Task> generateSchedule(List<Task> tasks) {
+    public List<Task> generateSchedule(List<Task> tasks, LocalDateTime referenceTime) {
 
         // Create a copy so the original task list is not changed.
         List<Task> schedule = new ArrayList<>(tasks);
