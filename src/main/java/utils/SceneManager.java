@@ -24,7 +24,7 @@ public class SceneManager {
      * Switches the content of the main window (full view change, e.g.
      * main-view -> comparison-view if you go the "swap center" route).
      */
-    public static void switchTo(String fxmlPath) throws IOException {
+    public static <T> T switchTo(String fxmlPath) throws IOException {
         FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(
                 SceneManager.class.getResource(fxmlPath)
         ));
@@ -40,6 +40,8 @@ public class SceneManager {
         ft.setFromValue(0.0);
         ft.setToValue(1.0);
         ft.play();
+
+        return loader.getController();
     }
 
 }

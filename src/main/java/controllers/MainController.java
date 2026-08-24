@@ -140,15 +140,10 @@ public class MainController {
 
     @FXML
     void handleEditTask(ActionEvent event) {
-
+        if (activeSelectedTask != null) {}
     }
 
-    @FXML
-    void handleStrategyGeneration(ActionEvent event) {
-
-    }
-
-  // Temporary method for testing
+  // Temporary method for testing otherwise user adds tasks via addtask
   private void createTasks(){
         App.taskManager.createTask(
                 "Finish Programming Lab",

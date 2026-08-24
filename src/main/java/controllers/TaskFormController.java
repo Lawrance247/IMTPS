@@ -70,6 +70,8 @@ public class TaskFormController {
     @FXML
     private TextField taskDescription;
 
+    private Task taskToEdit = null;
+
     @FXML
     void initialize() {
         //use enums later for categories
@@ -151,6 +153,10 @@ public class TaskFormController {
         nameField.setText("");
         taskDescription.setText("");
         categoryComboBox.setPromptText("");
+    }
+
+    public void setTaskToEdit(Task task){
+        taskToEdit = task;
     }
 
 }
