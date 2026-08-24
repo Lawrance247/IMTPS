@@ -112,7 +112,7 @@ public class TaskFormController {
     @FXML
     void handleSave(ActionEvent event) {
         try{
-            String taskName = nameField.getText().toUpperCase();
+            String taskName = nameField.getText();
             String description = taskDescription.getText();
             Category category = Category.valueOf(categoryComboBox.getValue().toUpperCase());
 
@@ -128,25 +128,44 @@ public class TaskFormController {
             Effort effort = (effortValueLabel.getText().equals("1")) ? Effort.LOW :
             (effortValueLabel.getText().equals("2")) ? Effort.MEDIUM : Effort.HIGH;
 
-            Task task = App.taskManager.createTask(
-                taskName,
-                description,
-                category,
-                deadline,
-                duration,
-                priority,
-                effort
-            );
-            errorLabel.setText("Task added successfully.");
-            errorLabel.setTextFill(Color.GREEN);
-            //System.out.println("Task added");
-            //SceneManager.switchTo("/fxml/task-form.fxml");
+            if (taskName.equals(taskToEdit.getTitle())){
+                updateEditedTask(description, category, deadline, duration, priority, effort);
+            }else{
+                createNewTask(taskName, description, category, deadline, duration, priority, effort);
+            }
         }catch(Exception e){
             //let user know task was not added to db
             errorLabel.setText("Task not added error occured. Please try again.");
             errorLabel.setTextFill(Color.RED);
             //e.printStackTrace();
         }
+    }
+
+    private void updateEditedTask(String description, Category category, LocalDateTime deadline, int duration, Priority priority, Effort effort){
+        taskToEdit.setDescription(description);
+        taskToEdit.setCategory(category);
+        taskToEdit.setDeadline(deadline);
+        taskToEdit.setDurationMinutes(duration);
+        taskToEdit.setImportance(priority);
+        taskToEdit.setEffort(effort);
+
+        App.taskManager.updateTask(taskToEdit);
+        errorLabel.setText("Task updated successfully.");
+        errorLabel.setTextFill(Color.GREEN);
+    }
+
+    private Task createNewTask(String taskName, String description, Category category, LocalDateTime deadline, int duration, Priority priority, Effort effort){
+        Task task = App.taskManager.createTask(
+            taskName,
+            description,
+            category,
+            deadline,
+            duration,
+            priority,
+            effort
+        );
+        errorLabel.setText("Task added successfully.");
+        errorLabel.setTextFill(Color.GREEN);
     }
 
     private void resetFields(){
@@ -158,6 +177,8 @@ public class TaskFormController {
     public void setTaskToEdit(Task task){
         taskToEdit = task;
         nameField.setText(task.getTitle());
+        nameField.setDisable(true);
+
         taskDescription.setText(task.getDescription());
         categoryComboBox.setValue(task.getCategory().toString());
         
@@ -167,8 +188,8 @@ public class TaskFormController {
         Integer min = dateTime.getMinute();
 
         deadlinePicker.setValue(date);
-        hourSpinner.setUserData(hrs); //didnt work
-        minuteSpinner.setUserData(min); //didnt work
+        hourSpinner.getValueFactory().setValue(hrs);
+        minuteSpinner.getValueFactory().setValue(min);
 
         durationField.setText(String.valueOf(task.getDurationMinutes()));
 
