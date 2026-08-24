@@ -131,7 +131,11 @@ public class MainController {
 
     @FXML
     void handleCompareStrategies(ActionEvent event) {
-
+      try {
+          ComparisonController controller = SceneManager.switchTo("/fxml/comparison-view.fxml");
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
 
     @FXML
