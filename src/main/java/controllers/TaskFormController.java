@@ -157,6 +157,29 @@ public class TaskFormController {
 
     public void setTaskToEdit(Task task){
         taskToEdit = task;
+        nameField.setText(task.getTitle());
+        taskDescription.setText(task.getDescription());
+        categoryComboBox.setValue(task.getCategory().toString());
+        
+        LocalDateTime dateTime = task.getDeadline();
+        LocalDate date = LocalDate.of(dateTime.getYear(), dateTime.getMonthValue(), dateTime.getDayOfMonth());
+        Integer hrs = dateTime.getHour();
+        Integer min = dateTime.getMinute();
+
+        deadlinePicker.setValue(date);
+        hourSpinner.setUserData(hrs); //didnt work
+        minuteSpinner.setUserData(min); //didnt work
+
+        durationField.setText(String.valueOf(task.getDurationMinutes()));
+
+        importanceSlider.setValue(task.getImportance().getWeight());
+        importanceValueLabel.setText(String.valueOf(task.getImportance().getWeight()));
+        effortSlider.setValue(task.getEffort().getWeight());
+        effortValueLabel.setText(String.valueOf(task.getEffort().getWeight()));
+
+
+
+
     }
 
 }

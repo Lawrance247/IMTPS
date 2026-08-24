@@ -72,9 +72,13 @@ public class MainController {
       ObservableList<String> modes = FXCollections.observableArrayList("ACADEMIC", "FAMILY", "LEISURE", "HEALTH");
       focusModeComboBox.setItems(modes);
 
-      createTasks();
+      List<Task> allTasks = App.taskManager.getAllTasks();
 
-      setUpSchedule();
+      if(allTasks.isEmpty()){
+        allTasks = createTasks();
+      }
+
+      setUpSchedule(allTasks);
       taskTable.getSelectionModel().selectedItemProperty().addListener((observable, oldTask, selectedTask) -> {
         if (selectedTask != null) {
           activeSelectedTask = selectedTask.getTask();
@@ -88,8 +92,8 @@ public class MainController {
 
     }
 
-    private void setUpSchedule(){
-      List<Task> allTasks = App.taskManager.getAllTasks();
+    private void setUpSchedule(List<Task> allTasks){
+      
 
       if (!allTasks.isEmpty()){
         Schedule schedule = App.scheduler.generateSchedule(allTasks, LocalDateTime.of(2026, 8, 28, 8, 0)); //make the schedulingStart dynamic
@@ -133,18 +137,24 @@ public class MainController {
     void handleDeleteTask(ActionEvent event) {
         if (activeSelectedTask != null){
           App.taskManager.deleteTask(activeSelectedTask.getId());
-          setUpSchedule();
+          setUpSchedule(App.taskManager.getAllTasks());
         }
 
     }
 
     @FXML
     void handleEditTask(ActionEvent event) {
-        if (activeSelectedTask != null) {}
+      if (activeSelectedTask != null) {
+        try {
+            TaskFormController controller = SceneManager.switchTo("/fxml/task-form.fxml");
+            controller.setTaskToEdit(activeSelectedTask);
+        } catch (Exception e) {
+        }
+      }
     }
 
   // Temporary method for testing otherwise user adds tasks via addtask
-  private void createTasks(){
+  private List<Task> createTasks(){
         App.taskManager.createTask(
                 "Finish Programming Lab",
                 "Complete the remaining programming lab exercises.",
@@ -544,5 +554,7 @@ public class MainController {
                 Priority.LOW,
                 Effort.MEDIUM
         );
+
+        return App.taskManager.getAllTasks();
   }
 }
