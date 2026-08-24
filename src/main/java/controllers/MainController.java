@@ -3,7 +3,6 @@ package controllers;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 import app.App;
@@ -65,69 +64,40 @@ public class MainController {
     @FXML
     private TableView<ScheduledTask> taskTable;
 
+    private Task activeSelectedTask = null;
+
     @FXML
     void initialize() {
       //use enums later
       ObservableList<String> modes = FXCollections.observableArrayList("ACADEMIC", "FAMILY", "LEISURE", "HEALTH");
       focusModeComboBox.setItems(modes);
 
-      List<Task> allTasks = createTasks();
+      createTasks();
 
-      // List<Task> allTasks = App.taskManager.getAllTasks();
+      setUpSchedule();
+      taskTable.getSelectionModel().selectedItemProperty().addListener((observable, oldTask, selectedTask) -> {
+        if (selectedTask != null) {
+          activeSelectedTask = selectedTask.getTask();
+          editTaskButton.setDisable(false);
+          deleteTaskButton.setDisable(false);
+        }else{
+          editTaskButton.setDisable(true);
+          deleteTaskButton.setDisable(true);               
+        }
+      });
 
-      if(!allTasks.isEmpty()){
+    }
+
+    private void setUpSchedule(){
+      List<Task> allTasks = App.taskManager.getAllTasks();
+
+      if (!allTasks.isEmpty()){
         Schedule schedule = App.scheduler.generateSchedule(allTasks, LocalDateTime.of(2026, 8, 28, 8, 0)); //make the schedulingStart dynamic
 
         List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
         setUpScheduleTable(scheduledTasks);
         taskCountLabel.setText(scheduledTasks.size() + " Tasks");
       }
-
-
-//       // ===== TEMPORAL SECTION FOR TESTING =====
-//       //create a WFS schedule
-//       WeightedFocusStrategy strategy = new WeightedFocusStrategy(FocusMode.LEISURE);
-//       Scheduler scheduler = new Scheduler(strategy, LocalTime.of(8, 0), LocalTime.of(18, 0));
-//       Schedule schedule = scheduler.generateSchedule(createTasks(), LocalDateTime.of(2026, 8, 28, 8, 0));
-
-//       //create an EDF schedule
-//       EarliestDeadlineFirstStrategy EDFstrategy = new EarliestDeadlineFirstStrategy();
-//       scheduler.setStrategy(EDFstrategy);
-//       Schedule EDFschedule = scheduler.generateSchedule(createTasks(), LocalDateTime.of(2026, 8, 28, 8, 0));
-
-
-//       //display schedule on CL
-//       System.out.println("\nWeighted Focus Strategy");
-//       List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
-//       List<ScheduledTask> clashes = schedule.getDeadlineClashes();
-
-//       for(ScheduledTask t : scheduledTasks){
-//        System.out.println(t.toString());
-//       }
-//       System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d\n", schedule.getDeadlineClashCount(), schedule.getTotalScheduledMinutes(), schedule.getTaskCount());
-//       System.out.println("Clashes:");
-//       for(ScheduledTask t : clashes){
-//        System.out.println(t.toString());
-//       }
-
-//       System.out.println("\nEarliest Deadline First Strategy");
-//       List<ScheduledTask> EDFScheduledTasks = EDFschedule.getScheduledTasks();
-//       for(ScheduledTask t : EDFScheduledTasks){
-//         System.out.println(t.toString());
-//       }
-
-//       System.out.printf("\nDeadline Clashes %d\nScheduled Minutes %d\nNumber of Tasks %d\n", EDFschedule.getDeadlineClashCount(), EDFschedule.getTotalScheduledMinutes(), EDFschedule.getTaskCount());
-//       System.out.println();
-
-//       //Comparison
-//       Comparison comparisonService = new Comparison(schedule, EDFschedule, FocusMode.LEISURE);
-//       ComparisonResult compResults = comparisonService.compare();
-//       System.out.printf("WFS ---> %s\n", compResults.getScheduleAMetrics().toString());
-//       System.out.printf("EDFS --> %s\n",compResults.getScheduleBMetrics().toString());
-
-//       // ==== END OF TEMPORAL SECTION ====
-
-
     }
 
     private void setUpScheduleTable(List<ScheduledTask> schedule){
@@ -161,6 +131,10 @@ public class MainController {
 
     @FXML
     void handleDeleteTask(ActionEvent event) {
+        if (activeSelectedTask != null){
+          App.taskManager.deleteTask(activeSelectedTask.getId());
+          setUpSchedule();
+        }
 
     }
 
@@ -175,9 +149,8 @@ public class MainController {
     }
 
   // Temporary method for testing
-  private List<Task> createTasks(){
-        List<Task> tasks = new ArrayList<>();
-        tasks.add(new Task(
+  private void createTasks(){
+        App.taskManager.createTask(
                 "Finish Programming Lab",
                 "Complete the remaining programming lab exercises.",
                 Category.ACADEMIC,
@@ -185,9 +158,9 @@ public class MainController {
                 120,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Review Design Patterns",
                 "Study common software design patterns and examples.",
                 Category.ACADEMIC,
@@ -195,9 +168,9 @@ public class MainController {
                 90,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Finance Problem Set",
                 "Complete the assigned corporate finance calculations.",
                 Category.ACADEMIC,
@@ -205,9 +178,9 @@ public class MainController {
                 120,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Update Project README",
                 "Add setup instructions and usage information to the project README.",
                 Category.ACADEMIC,
@@ -215,9 +188,9 @@ public class MainController {
                 60,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Study Probability",
                 "Revise probability concepts and solve practice problems.",
                 Category.ACADEMIC,
@@ -225,9 +198,9 @@ public class MainController {
                 90,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Prepare Tutorial Questions",
                 "Work through questions before the next tutorial.",
                 Category.ACADEMIC,
@@ -235,9 +208,9 @@ public class MainController {
                 75,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Refactor Java Classes",
                 "Improve the structure and readability of the Java project.",
                 Category.ACADEMIC,
@@ -245,9 +218,9 @@ public class MainController {
                 150,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Review Exam Notes",
                 "Review previous lecture notes and create a revision summary.",
                 Category.ACADEMIC,
@@ -255,9 +228,9 @@ public class MainController {
                 90,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Complete Research",
                 "Finish collecting information for the research assignment.",
                 Category.ACADEMIC,
@@ -265,9 +238,9 @@ public class MainController {
                 120,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Practice Coding Questions",
                 "Solve programming questions under timed conditions.",
                 Category.ACADEMIC,
@@ -275,9 +248,9 @@ public class MainController {
                 120,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Call Sibling",
                 "Catch up with a sibling over the phone.",
                 Category.FAMILY,
@@ -285,9 +258,9 @@ public class MainController {
                 30,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Clean Living Area",
                 "Clean and organise the shared living area.",
                 Category.FAMILY,
@@ -295,9 +268,9 @@ public class MainController {
                 90,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Prepare Breakfast",
                 "Prepare breakfast for the household.",
                 Category.FAMILY,
@@ -305,9 +278,9 @@ public class MainController {
                 45,
                 Priority.MEDIUM,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Buy Cleaning Supplies",
                 "Purchase cleaning products and household supplies.",
                 Category.FAMILY,
@@ -315,9 +288,9 @@ public class MainController {
                 60,
                 Priority.MEDIUM,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Cook Family Dinner",
                 "Prepare and serve dinner for the family.",
                 Category.FAMILY,
@@ -325,9 +298,9 @@ public class MainController {
                 120,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Organise Wardrobe",
                 "Sort clothes and organise the wardrobe.",
                 Category.FAMILY,
@@ -335,9 +308,9 @@ public class MainController {
                 90,
                 Priority.LOW,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Clean Bathroom",
                 "Thoroughly clean and organise the bathroom.",
                 Category.FAMILY,
@@ -345,9 +318,9 @@ public class MainController {
                 75,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Family Breakfast",
                 "Have breakfast together with the family.",
                 Category.FAMILY,
@@ -355,9 +328,9 @@ public class MainController {
                 90,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Help With Errands",
                 "Help a family member complete weekend errands.",
                 Category.FAMILY,
@@ -365,9 +338,9 @@ public class MainController {
                 150,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Prepare Lunch",
                 "Prepare lunch for the household.",
                 Category.FAMILY,
@@ -375,9 +348,9 @@ public class MainController {
                 60,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Upper Body Workout",
                 "Complete an upper body strength workout.",
                 Category.HEALTH,
@@ -385,9 +358,9 @@ public class MainController {
                 75,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Cycling Session",
                 "Go cycling for cardiovascular exercise.",
                 Category.HEALTH,
@@ -395,9 +368,9 @@ public class MainController {
                 90,
                 Priority.MEDIUM,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Mobility Routine",
                 "Complete a full-body mobility routine.",
                 Category.HEALTH,
@@ -405,9 +378,9 @@ public class MainController {
                 30,
                 Priority.MEDIUM,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Lower Body Workout",
                 "Complete a lower body strength training session.",
                 Category.HEALTH,
@@ -415,9 +388,9 @@ public class MainController {
                 75,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Swimming",
                 "Complete a recreational swimming workout.",
                 Category.HEALTH,
@@ -425,9 +398,9 @@ public class MainController {
                 90,
                 Priority.MEDIUM,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Recovery Session",
                 "Complete stretching and light recovery exercises.",
                 Category.HEALTH,
@@ -435,9 +408,9 @@ public class MainController {
                 45,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Interval Running",
                 "Complete a high-intensity interval running session.",
                 Category.HEALTH,
@@ -445,9 +418,9 @@ public class MainController {
                 60,
                 Priority.HIGH,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Prepare Healthy Snacks",
                 "Prepare healthy snacks for the upcoming week.",
                 Category.HEALTH,
@@ -455,9 +428,9 @@ public class MainController {
                 60,
                 Priority.LOW,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Core Workout",
                 "Complete a focused abdominal and core workout.",
                 Category.HEALTH,
@@ -465,9 +438,9 @@ public class MainController {
                 45,
                 Priority.MEDIUM,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Long Walk",
                 "Go for a long walk to stay active and clear the mind.",
                 Category.HEALTH,
@@ -475,9 +448,9 @@ public class MainController {
                 75,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Visit Coffee Shop",
                 "Go to a coffee shop and relax for a while.",
                 Category.LEISURE,
@@ -485,9 +458,9 @@ public class MainController {
                 90,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Play Board Game",
                 "Spend the evening playing a board game.",
                 Category.LEISURE,
@@ -495,9 +468,9 @@ public class MainController {
                 120,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Listen to Podcast",
                 "Listen to a podcast while relaxing.",
                 Category.LEISURE,
@@ -505,9 +478,9 @@ public class MainController {
                 60,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Go for a Hike",
                 "Spend the afternoon hiking and exploring nature.",
                 Category.LEISURE,
@@ -515,9 +488,9 @@ public class MainController {
                 180,
                 Priority.MEDIUM,
                 Effort.HIGH
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Visit Bookstore",
                 "Browse books and spend some time reading.",
                 Category.LEISURE,
@@ -525,9 +498,9 @@ public class MainController {
                 90,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Play Pool",
                 "Play pool with friends.",
                 Category.LEISURE,
@@ -535,9 +508,9 @@ public class MainController {
                 120,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Try New Restaurant",
                 "Have dinner at a restaurant that you have not visited before.",
                 Category.LEISURE,
@@ -545,9 +518,9 @@ public class MainController {
                 120,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Watch Documentary",
                 "Watch an interesting documentary.",
                 Category.LEISURE,
@@ -555,9 +528,9 @@ public class MainController {
                 120,
                 Priority.LOW,
                 Effort.LOW
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Go Shopping",
                 "Spend some free time browsing shops.",
                 Category.LEISURE,
@@ -565,9 +538,9 @@ public class MainController {
                 150,
                 Priority.LOW,
                 Effort.MEDIUM
-        ));
+        );
 
-        tasks.add(new Task(
+        App.taskManager.createTask(
                 "Photography Walk",
                 "Take a walk around the city and practise photography.",
                 Category.LEISURE,
@@ -575,7 +548,6 @@ public class MainController {
                 120,
                 Priority.LOW,
                 Effort.MEDIUM
-        ));
-        return tasks;
+        );
   }
 }
