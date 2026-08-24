@@ -122,7 +122,8 @@ public class MainController {
     @FXML
     void handleAddTask(ActionEvent event) {
       try {
-          SceneManager.switchTo("/fxml/task-form.fxml");
+          TaskFormController controller = SceneManager.switchTo("/fxml/task-form.fxml");
+          controller.setTaskToEdit(null);
       } catch (IOException e) {
         e.printStackTrace();
       }

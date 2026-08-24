@@ -128,7 +128,7 @@ public class TaskFormController {
             Effort effort = (effortValueLabel.getText().equals("1")) ? Effort.LOW :
             (effortValueLabel.getText().equals("2")) ? Effort.MEDIUM : Effort.HIGH;
 
-            if (taskName.equals(taskToEdit.getTitle())){
+            if ( (taskToEdit != null) && ( taskName.equals(taskToEdit.getTitle()) ) ){
                 updateEditedTask(description, category, deadline, duration, priority, effort);
             }else{
                 createNewTask(taskName, description, category, deadline, duration, priority, effort);
@@ -137,7 +137,7 @@ public class TaskFormController {
             //let user know task was not added to db
             errorLabel.setText("Task not added error occured. Please try again.");
             errorLabel.setTextFill(Color.RED);
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -166,6 +166,8 @@ public class TaskFormController {
         );
         errorLabel.setText("Task added successfully.");
         errorLabel.setTextFill(Color.GREEN);
+
+        return task;
     }
 
     private void resetFields(){
