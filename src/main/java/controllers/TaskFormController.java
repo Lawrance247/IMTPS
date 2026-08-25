@@ -182,32 +182,30 @@ public class TaskFormController {
     }
 
     public void setTaskToEdit(Task task){
-        taskToEdit = task;
-        nameField.setText(task.getTitle());
-        nameField.setDisable(true);
+        this.taskToEdit = task;
+        if (taskToEdit != null) {
+            nameField.setText(task.getTitle());
+            nameField.setDisable(true);
 
-        taskDescription.setText(task.getDescription());
-        categoryComboBox.setValue(task.getCategory().toString());
-        
-        LocalDateTime dateTime = task.getDeadline();
-        LocalDate date = LocalDate.of(dateTime.getYear(), dateTime.getMonthValue(), dateTime.getDayOfMonth());
-        Integer hrs = dateTime.getHour();
-        Integer min = dateTime.getMinute();
+            taskDescription.setText(task.getDescription());
+            categoryComboBox.setValue(task.getCategory().toString());
+            
+            LocalDateTime dateTime = task.getDeadline();
+            LocalDate date = LocalDate.of(dateTime.getYear(), dateTime.getMonthValue(), dateTime.getDayOfMonth());
+            Integer hrs = dateTime.getHour();
+            Integer min = dateTime.getMinute();
 
-        deadlinePicker.setValue(date);
-        hourSpinner.getValueFactory().setValue(hrs);
-        minuteSpinner.getValueFactory().setValue(min);
+            deadlinePicker.setValue(date);
+            hourSpinner.getValueFactory().setValue(hrs);
+            minuteSpinner.getValueFactory().setValue(min);
 
-        durationField.setText(String.valueOf(task.getDurationMinutes()));
+            durationField.setText(String.valueOf(task.getDurationMinutes()));
 
-        importanceSlider.setValue(task.getImportance().getWeight());
-        importanceValueLabel.setText(String.valueOf(task.getImportance().getWeight()));
-        effortSlider.setValue(task.getEffort().getWeight());
-        effortValueLabel.setText(String.valueOf(task.getEffort().getWeight()));
-
-
-
-
+            importanceSlider.setValue(task.getImportance().getWeight());
+            importanceValueLabel.setText(String.valueOf(task.getImportance().getWeight()));
+            effortSlider.setValue(task.getEffort().getWeight());
+            effortValueLabel.setText(String.valueOf(task.getEffort().getWeight()));
+        }
     }
 
 }

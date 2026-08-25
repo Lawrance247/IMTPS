@@ -205,7 +205,6 @@ public class ComparisonController {
 
     private void setUpMetricsTable(List<MetricRow> metrics, String strategyAName, String strategyBName){
       metricNameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMetricName()));
-      metricNameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMetricName()));
       metricDefinitionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDefinition()));
       metricDirectionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDirection()));
       metricAColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getValueA()));
