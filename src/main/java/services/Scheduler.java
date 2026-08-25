@@ -60,6 +60,13 @@ public class Scheduler {
         this.dailyEndTime = end;
     }
 
+    public LocalTime getAvailabilityStartTime(){
+        return this.dailyStartTime;
+    }
+    public LocalTime getAvailabilityEndTime(){
+        return this.dailyEndTime;
+    }
+
     /**
      * Generates a complete time-based schedule.
      * Tasks are NOT removed when they cause problems.
@@ -76,7 +83,8 @@ public class Scheduler {
         }
 
         if (schedulingStart == null) {
-            throw new IllegalArgumentException("Scheduling start time cannot be null.");
+            // assume schedule starts the next day from the day the user creates it. 
+            schedulingStart = LocalDateTime.of(LocalDate.now(), this.dailyStartTime).plusDays(1);
         }
 
         // The strategy determines the priority/order.

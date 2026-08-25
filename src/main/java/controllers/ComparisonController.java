@@ -109,21 +109,23 @@ public class ComparisonController {
 
       // generate schedules
       if (!tasks.isEmpty()){
+        // ==== SET UP FIRST STRATEGY ====
         App.scheduler.setStrategy(new EarliestDeadlineFirstStrategy());
-        Schedule edfSchedule = App.scheduler.generateSchedule(tasks, LocalDateTime.of(2026, 8, 28, 8, 0));
+        Schedule edfSchedule = App.scheduler.generateSchedule(tasks, null);
         setUpScheduleTable(edfSchedule.getScheduledTasks(), "A");
         strategyALabel.setText("Earliest Deadline First Strategy");
 
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
         
-
+        // ==== SET UP SECOND STRATEGY ===
         App.scheduler.setStrategy(new WeightedFocusStrategy(FocusMode.ACADEMIC));
-        Schedule wfSchedule = App.scheduler.generateSchedule(tasks, LocalDateTime.of(2026, 8, 28, 8, 0));
+        Schedule wfSchedule = App.scheduler.generateSchedule(tasks, null);
         setUpScheduleTable(wfSchedule.getScheduledTasks(), "B");
         strategyBLabel.setText("Weighted Focus Strategy");
 
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
 
+        // ===== COMPARING STRATEGIES =====
         Comparison scheduleComparison = new Comparison(edfSchedule, wfSchedule, FocusMode.ACADEMIC);
         ComparisonResult compResults = scheduleComparison.compare();
 

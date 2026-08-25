@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -122,7 +123,7 @@ public class MainController {
       
 
       if (!allTasks.isEmpty()){
-        Schedule schedule = App.scheduler.generateSchedule(allTasks, LocalDateTime.of(2026, 8, 28, 8, 0)); //make the schedulingStart dynamic
+        Schedule schedule = App.scheduler.generateSchedule(allTasks, null); //make the schedulingStart dynamic
 
         List<ScheduledTask> scheduledTasks = schedule.getScheduledTasks();
         setUpScheduleTable(scheduledTasks);
