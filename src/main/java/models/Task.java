@@ -1,9 +1,11 @@
 package models;
-
-import utils.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.UUID;  // Universal Unique Id (128 bit values, type String): exmaple f47ac10b-58cc-4372-a567-0e02b2c3d479
+import java.util.UUID;
+
+import utils.Category;
+import utils.TaskStatus;
+import utils.Weights;  // Universal Unique Id (128 bit values, type String): exmaple f47ac10b-58cc-4372-a567-0e02b2c3d479
 
 
 
@@ -16,13 +18,13 @@ public class Task
     private Category category;
     private LocalDateTime deadline;
     private int durationMinutes;
-    private Priority importance;
-    private Effort effort;
+    private Weights effort;
     private TaskStatus status;
+    private Weights importance;
 
     public Task(String title, String description, Category category,
                 LocalDateTime deadline, int durationMinutes,
-                Priority importance, Effort effort)
+                Weights importance, Weights effort)
     {
         this.id = UUID.randomUUID().toString(); //convert to string for easier storage and comparison
         this.title = title;
@@ -70,14 +72,16 @@ public class Task
     { 
         return durationMinutes; 
     }
-    public Priority getImportance() 
-    { 
-        return importance; 
+   public Weights getEffort()
+    {
+        return effort;
     }
-    public Effort getEffort() 
-    { 
-        return effort; 
+
+    public Weights getImportance()
+    {
+        return importance;
     }
+   
     public TaskStatus getStatus() 
     { 
         return status; 
@@ -103,13 +107,14 @@ public class Task
     { 
         this.durationMinutes = durationMinutes; 
     }
-    public void setImportance(Priority importance) 
-    { 
-        this.importance = importance; 
+    public void setEffort(Weights effort)
+    {
+        this.effort = effort;
     }
-    public void setEffort(Effort effort) 
-    { 
-        this.effort = effort; 
+
+    public void setImportance(Weights importance)
+    {
+        this.importance = importance;
     }
     public void setStatus(TaskStatus status) 
     { 

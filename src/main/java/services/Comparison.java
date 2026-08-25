@@ -7,15 +7,15 @@ import models.Schedule;
 import models.ScheduleMetrics;
 import models.ScheduledTask;
 import models.Task;
-import utils.FocusMode;
+import utils.Category;
 
 public class Comparison {
 
   private final Schedule scheduleA;
   private final Schedule scheduleB;
-  private final FocusMode focusMode;
+  private final Category focusMode;
 
-  public Comparison(Schedule scheduleA, Schedule scheduleB, FocusMode focusMode) {
+  public Comparison(Schedule scheduleA, Schedule scheduleB, Category focusMode) {
     this.scheduleA = scheduleA;
     this.scheduleB = scheduleB;
     this.focusMode = focusMode;

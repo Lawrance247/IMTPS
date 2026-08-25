@@ -7,7 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import models.Task;
-import utils.FocusMode;
+import utils.Category;
 
 public class WeightedFocusStrategy implements SchedulingStrategy {
 
@@ -17,9 +17,9 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
     private static final double URGENCY_WEIGHT = 0.20;
     private static final double EFFORT_WEIGHT = 0.10;
 
-    private final FocusMode focusMode;
+    private final Category focusMode;
 
-    public WeightedFocusStrategy(FocusMode focusMode) {
+    public WeightedFocusStrategy(Category focusMode) {
         this.focusMode = focusMode;
     }
 

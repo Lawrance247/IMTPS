@@ -21,9 +21,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import models.Task;
 import utils.Category;
-import utils.Effort;
-import utils.Priority;
-import  utils.SceneManager;
+import utils.SceneManager;
+import utils.Weights;
 
 public class TaskFormController {
 
@@ -123,10 +122,10 @@ public class TaskFormController {
 
             Integer duration = Integer.parseInt(durationField.getText());
 
-            Priority priority = (importanceValueLabel.getText().equals("1")) ? Priority.LOW :
-            (importanceValueLabel.getText().equals("2")) ? Priority.MEDIUM : Priority.HIGH;
-            Effort effort = (effortValueLabel.getText().equals("1")) ? Effort.LOW :
-            (effortValueLabel.getText().equals("2")) ? Effort.MEDIUM : Effort.HIGH;
+            Weights priority = (importanceValueLabel.getText().equals("1")) ? Weights.LOW :
+            (importanceValueLabel.getText().equals("2")) ? Weights.MEDIUM : Weights.HIGH;
+            Weights effort = (effortValueLabel.getText().equals("1")) ? Weights.LOW :
+            (effortValueLabel.getText().equals("2")) ? Weights.MEDIUM : Weights.HIGH;
 
             if ( (taskToEdit != null) && ( taskName.equals(taskToEdit.getTitle()) ) ){
                 updateEditedTask(description, category, deadline, duration, priority, effort);
@@ -141,7 +140,7 @@ public class TaskFormController {
         }
     }
 
-    private void updateEditedTask(String description, Category category, LocalDateTime deadline, int duration, Priority priority, Effort effort){
+    private void updateEditedTask(String description, Category category, LocalDateTime deadline, int duration, Weights priority, Weights effort){
         taskToEdit.setDescription(description);
         taskToEdit.setCategory(category);
         taskToEdit.setDeadline(deadline);
@@ -152,9 +151,15 @@ public class TaskFormController {
         App.taskManager.updateTask(taskToEdit);
         errorLabel.setText("Task updated successfully.");
         errorLabel.setTextFill(Color.GREEN);
+
+        try {
+            MainController controller = SceneManager.switchTo("/fxml/main-view.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private Task createNewTask(String taskName, String description, Category category, LocalDateTime deadline, int duration, Priority priority, Effort effort){
+    private Task createNewTask(String taskName, String description, Category category, LocalDateTime deadline, int duration, Weights priority, Weights effort){
         Task task = App.taskManager.createTask(
             taskName,
             description,

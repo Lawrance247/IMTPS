@@ -25,7 +25,7 @@ import models.Task;
 import services.Comparison;
 import strategies.EarliestDeadlineFirstStrategy;
 import strategies.WeightedFocusStrategy;
-import utils.FocusMode;
+import utils.Category;
 import utils.SceneManager;
 
 public class ComparisonController {
@@ -99,6 +99,8 @@ public class ComparisonController {
     @FXML
     private Label strategyBLabel;
 
+    private Category focusMode = Category.ACADEMIC;
+
     @FXML
     void initialize(){
       ObservableList<String> availableStrategies = FXCollections.observableArrayList();
@@ -116,7 +118,7 @@ public class ComparisonController {
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
         
         // ==== SET UP SECOND STRATEGY ===
-        App.scheduler.setStrategy(new WeightedFocusStrategy(FocusMode.ACADEMIC));
+        App.scheduler.setStrategy(new WeightedFocusStrategy(focusMode));
         Schedule wfSchedule = App.scheduler.generateSchedule(tasks, null);
         setUpScheduleTable(wfSchedule.getScheduledTasks(), "B");
         strategyBLabel.setText("Weighted Focus Strategy");
@@ -124,7 +126,7 @@ public class ComparisonController {
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
 
         // ===== COMPARING STRATEGIES =====
-        Comparison scheduleComparison = new Comparison(edfSchedule, wfSchedule, FocusMode.ACADEMIC);
+        Comparison scheduleComparison = new Comparison(edfSchedule, wfSchedule, focusMode);
         ComparisonResult compResults = scheduleComparison.compare();
 
         ScheduleMetrics edfMetrics = compResults.getScheduleAMetrics();
@@ -153,7 +155,8 @@ public class ComparisonController {
 
         pickPrefferedStrategy.setItems(availableStrategies);
 
-        focusModeLabel.setText(FocusMode.ACADEMIC.toString());
+        System.out.println(focusMode.toString());
+        focusModeLabel.setText(focusMode.toString());
       }
     }
 
@@ -164,6 +167,10 @@ public class ComparisonController {
         long hours = abs / 60;
         long mins = abs % 60;
         return hours > 0 ? sign + hours + "h " + mins + "m" : sign + mins + "m";
+    }
+
+    public void setFocusMode(Category mode){
+      this.focusMode = mode;
     }
 
     private void setUpScheduleTable(List<ScheduledTask> schedule, String scheduleType){
@@ -218,7 +225,8 @@ public class ComparisonController {
           App.scheduler.setStrategy(new EarliestDeadlineFirstStrategy());
         }
         else{
-          App.scheduler.setStrategy(new WeightedFocusStrategy(FocusMode.ACADEMIC));
+          App.scheduler.setStrategy(new WeightedFocusStrategy(focusMode));
+          System.out.println(focusMode.toString());
         }
         MainController controller = SceneManager.switchTo("/fxml/main-view.fxml");
       } catch (IOException e) {

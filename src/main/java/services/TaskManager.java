@@ -6,8 +6,7 @@ import java.util.List;
 import models.Task;
 import repositories.TaskDB;
 import utils.Category;
-import utils.Effort;
-import utils.Priority;
+import utils.Weights;
 
 public class TaskManager 
 {
@@ -20,11 +19,11 @@ public class TaskManager
     }
 
 
-    public Task createTask(String title, String description, Category category, LocalDateTime deadline, int durationMinutes, Priority importance, Effort effort) 
+    public Task createTask(String title, String description, Category category, LocalDateTime deadline, int durationMinutes, Weights effort, Weights importance) 
     {
         validateDeadline(deadline);
-        validateTaskFields(title, category, durationMinutes, importance, effort);
-        Task task = new Task(title, description, category, deadline, durationMinutes, importance, effort);
+        validateTaskFields(title, category, durationMinutes, effort, importance);
+        Task task = new Task(title, description, category, deadline, durationMinutes, effort, importance);
         taskDB.add(task);
         return task;
     }
@@ -65,7 +64,7 @@ public class TaskManager
     }
 
     // helper which validates task fields
-    private void validateTaskFields(String title, Category category, int durationMinutes, Priority importance, Effort effort) {
+    private void validateTaskFields(String title, Category category, int durationMinutes, Weights effort, Weights importance) {
     if (title == null || title.isBlank()) 
     {
         throw new IllegalArgumentException("Title cannot be empty");
@@ -78,13 +77,14 @@ public class TaskManager
     {
         throw new IllegalArgumentException("Duration must be positive");
     }
-    if (importance == null) 
+    if (effort == null)
     {
-        throw new IllegalArgumentException("Importance cannot be null");
+        throw new IllegalArgumentException("Field cannot be empty");
     }
-    if (effort == null) 
+
+    if (importance == null)
     {
-        throw new IllegalArgumentException("Effort cannot be null");
+        throw new IllegalArgumentException("Field cannot be empty");
     }
 }
 

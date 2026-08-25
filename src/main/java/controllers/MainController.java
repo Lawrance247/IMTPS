@@ -23,9 +23,8 @@ import models.Schedule;
 import models.ScheduledTask;
 import models.Task;
 import utils.Category;
-import utils.Effort;
-import utils.Priority;
 import utils.SceneManager;
+import utils.Weights;
 public class MainController {
 
     @FXML
@@ -44,7 +43,7 @@ public class MainController {
     private Button editTaskButton;
 
     @FXML
-    private ComboBox<String> focusModeComboBox;
+    private ComboBox<Category> focusModeComboBox;
 
     @FXML
     private Spinner<Integer> availabilityEndHrSpinner;
@@ -84,7 +83,7 @@ public class MainController {
     @FXML
     void initialize() {
       //use enums later
-      ObservableList<String> modes = FXCollections.observableArrayList("ACADEMIC", "FAMILY", "LEISURE", "HEALTH");
+      ObservableList<Category> modes = FXCollections.observableArrayList(Category.ACADEMIC, Category.FAMILY, Category.LEISURE, Category.HEALTH);
       focusModeComboBox.setItems(modes);
 
         // Availability time spinners -> allows the user to select availability time.
@@ -159,6 +158,10 @@ public class MainController {
     void handleCompareStrategies(ActionEvent event) {
       try {
           ComparisonController controller = SceneManager.switchTo("/fxml/comparison-view.fxml");
+          Category mode = focusModeComboBox.getValue();
+          if(mode != null){
+            controller.setFocusMode(mode);
+          }
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -195,283 +198,285 @@ public class MainController {
   // Temporary method for testing otherwise user adds tasks via addtask
   private List<Task> createTasks(){
         App.taskManager.createTask(
-                "Finish Programming Lab",
-                "Complete the remaining programming lab exercises.",
+                "Complete Database Queries",
+                "Finish the remaining SQL queries for the database assignment.",
                 Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 1, 10, 0),
-                120,
-                Priority.HIGH,
-                Effort.HIGH
-        );
-
-        App.taskManager.createTask(
-                "Review Design Patterns",
-                "Study common software design patterns and examples.",
-                Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 1, 14, 0),
+                LocalDateTime.of(2026, 9, 1, 11, 0),
                 90,
-                Priority.MEDIUM,
-                Effort.MEDIUM
+                Weights.HIGH,
+                Weights.HIGH
         );
 
         App.taskManager.createTask(
-                "Finance Problem Set",
-                "Complete the assigned corporate finance calculations.",
+                "Review Lecture Notes",
+                "Review notes from the latest computer science lecture.",
                 Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 2, 16, 0),
-                120,
-                Priority.HIGH,
-                Effort.HIGH
-        );
-
-        App.taskManager.createTask(
-                "Update Project README",
-                "Add setup instructions and usage information to the project README.",
-                Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 2, 19, 0),
+                LocalDateTime.of(2026, 9, 1, 15, 0),
                 60,
-                Priority.LOW,
-                Effort.LOW
+                Weights.MEDIUM,
+                Weights.LOW
         );
 
         App.taskManager.createTask(
-                "Study Probability",
-                "Revise probability concepts and solve practice problems.",
+                "Study Algorithms",
+                "Revise sorting, searching, and graph algorithms.",
                 Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 3, 11, 0),
+                LocalDateTime.of(2026, 9, 2, 10, 0),
+                120,
+                Weights.HIGH,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Complete Finance Exercises",
+                "Work through the assigned finance calculation exercises.",
+                Category.ACADEMIC,
+                LocalDateTime.of(2026, 9, 2, 14, 0),
                 90,
-                Priority.MEDIUM,
-                Effort.MEDIUM
+                Weights.MEDIUM,
+                Weights.MEDIUM
         );
 
         App.taskManager.createTask(
-                "Prepare Tutorial Questions",
-                "Work through questions before the next tutorial.",
+                "Debug Java Project",
+                "Find and fix errors in the current Java project.",
                 Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 3, 15, 0),
-                75,
-                Priority.MEDIUM,
-                Effort.MEDIUM
+                LocalDateTime.of(2026, 9, 3, 16, 0),
+                150,
+                Weights.HIGH,
+                Weights.HIGH
         );
 
         App.taskManager.createTask(
-                "Refactor Java Classes",
-                "Improve the structure and readability of the Java project.",
+                "Prepare Tutorial",
+                "Complete questions before the upcoming tutorial.",
+                Category.ACADEMIC,
+                LocalDateTime.of(2026, 9, 3, 12, 0),
+                75,
+                Weights.MEDIUM,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Read Research Paper",
+                "Read and summarise the assigned research paper.",
                 Category.ACADEMIC,
                 LocalDateTime.of(2026, 9, 4, 13, 0),
-                150,
-                Priority.HIGH,
-                Effort.HIGH
+                90,
+                Weights.LOW,
+                Weights.MEDIUM
         );
 
         App.taskManager.createTask(
-                "Review Exam Notes",
-                "Review previous lecture notes and create a revision summary.",
+                "Update Project Documentation",
+                "Update documentation for the latest project changes.",
                 Category.ACADEMIC,
                 LocalDateTime.of(2026, 9, 4, 18, 0),
-                90,
-                Priority.MEDIUM,
-                Effort.MEDIUM
-        );
-
-        App.taskManager.createTask(
-                "Complete Research",
-                "Finish collecting information for the research assignment.",
-                Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 5, 12, 0),
-                120,
-                Priority.HIGH,
-                Effort.HIGH
+                60,
+                Weights.MEDIUM,
+                Weights.LOW
         );
 
         App.taskManager.createTask(
                 "Practice Coding Questions",
                 "Solve programming questions under timed conditions.",
                 Category.ACADEMIC,
-                LocalDateTime.of(2026, 9, 6, 10, 0),
-                120,
-                Priority.HIGH,
-                Effort.HIGH
-        );
-
-        App.taskManager.createTask(
-                "Call Sibling",
-                "Catch up with a sibling over the phone.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 1, 20, 0),
-                30,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Clean Living Area",
-                "Clean and organise the shared living area.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 2, 10, 0),
-                90,
-                Priority.MEDIUM,
-                Effort.MEDIUM
-        );
-
-        App.taskManager.createTask(
-                "Prepare Breakfast",
-                "Prepare breakfast for the household.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 2, 7, 30),
-                45,
-                Priority.MEDIUM,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Buy Cleaning Supplies",
-                "Purchase cleaning products and household supplies.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 3, 17, 0),
-                60,
-                Priority.MEDIUM,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Cook Family Dinner",
-                "Prepare and serve dinner for the family.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 3, 18, 30),
-                120,
-                Priority.MEDIUM,
-                Effort.MEDIUM
-        );
-
-        App.taskManager.createTask(
-                "Organise Wardrobe",
-                "Sort clothes and organise the wardrobe.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 4, 11, 0),
-                90,
-                Priority.LOW,
-                Effort.MEDIUM
-        );
-
-        App.taskManager.createTask(
-                "Clean Bathroom",
-                "Thoroughly clean and organise the bathroom.",
-                Category.FAMILY,
                 LocalDateTime.of(2026, 9, 5, 10, 0),
-                75,
-                Priority.MEDIUM,
-                Effort.MEDIUM
+                120,
+                Weights.HIGH,
+                Weights.HIGH
         );
 
         App.taskManager.createTask(
-                "Family Breakfast",
-                "Have breakfast together with the family.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 6, 9, 0),
-                90,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Help With Errands",
-                "Help a family member complete weekend errands.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 6, 13, 0),
-                150,
-                Priority.MEDIUM,
-                Effort.MEDIUM
-        );
-
-        App.taskManager.createTask(
-                "Prepare Lunch",
-                "Prepare lunch for the household.",
-                Category.FAMILY,
-                LocalDateTime.of(2026, 9, 7, 12, 0),
+                "Organise Study Material",
+                "Organise lecture notes, assignments, and study resources.",
+                Category.ACADEMIC,
+                LocalDateTime.of(2026, 9, 6, 11, 0),
                 60,
-                Priority.MEDIUM,
-                Effort.MEDIUM
+                Weights.LOW,
+                Weights.LOW
         );
+
+
+        App.taskManager.createTask(
+                "Clean Bedroom",
+                "Clean and organise the bedroom.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 1, 18, 0),
+                60,
+                Weights.MEDIUM,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Buy Groceries",
+                "Purchase groceries and household food supplies.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 2, 17, 0),
+                75,
+                Weights.HIGH,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Call Family",
+                "Call family members and catch up with them.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 2, 20, 0),
+                30,
+                Weights.MEDIUM,
+                Weights.LOW
+        );
+
+        App.taskManager.createTask(
+                "Prepare Dinner",
+                "Prepare dinner for the household.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 3, 18, 0),
+                90,
+                Weights.HIGH,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Wash Clothes",
+                "Do the weekly laundry and put clothes away.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 4, 9, 0),
+                120,
+                Weights.MEDIUM,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Clean Kitchen",
+                "Clean the kitchen and organise the cupboards.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 4, 16, 0),
+                75,
+                Weights.MEDIUM,
+                Weights.HIGH
+        );
+
+        App.taskManager.createTask(
+                "Help With Shopping",
+                "Help a family member complete the weekly shopping.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 5, 13, 0),
+                90,
+                Weights.LOW,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Visit Relative",
+                "Visit a relative and spend some time together.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 6, 14, 0),
+                180,
+                Weights.MEDIUM,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Organise Household Documents",
+                "Sort and organise important household documents.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 7, 11, 0),
+                90,
+                Weights.LOW,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Prepare Family Lunch",
+                "Prepare lunch for the family.",
+                Category.FAMILY,
+                LocalDateTime.of(2026, 9, 8, 12, 0),
+                90,
+                Weights.MEDIUM,
+                Weights.HIGH
+        );
+
 
         App.taskManager.createTask(
                 "Upper Body Workout",
-                "Complete an upper body strength workout.",
+                "Complete an upper body strength training session.",
                 Category.HEALTH,
-                LocalDateTime.of(2026, 9, 1, 16, 0),
+                LocalDateTime.of(2026, 9, 1, 16, 30),
                 75,
-                Priority.HIGH,
-                Effort.HIGH
+                Weights.HIGH,
+                Weights.HIGH
+        );
+
+        App.taskManager.createTask(
+                "Morning Run",
+                "Go for a short morning run.",
+                Category.HEALTH,
+                LocalDateTime.of(2026, 9, 2, 7, 30),
+                45,
+                Weights.MEDIUM,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Stretching Session",
+                "Complete a full-body stretching and mobility routine.",
+                Category.HEALTH,
+                LocalDateTime.of(2026, 9, 2, 19, 0),
+                30,
+                Weights.LOW,
+                Weights.LOW
+        );
+
+        App.taskManager.createTask(
+                "Football Training",
+                "Attend football training and complete drills.",
+                Category.HEALTH,
+                LocalDateTime.of(2026, 9, 3, 15, 0),
+                120,
+                Weights.HIGH,
+                Weights.HIGH
+        );
+
+        App.taskManager.createTask(
+                "Meal Preparation",
+                "Prepare healthy meals for the next few days.",
+                Category.HEALTH,
+                LocalDateTime.of(2026, 9, 4, 17, 0),
+                120,
+                Weights.MEDIUM,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Lower Body Workout",
+                "Complete a lower body strength workout.",
+                Category.HEALTH,
+                LocalDateTime.of(2026, 9, 5, 10, 0),
+                75,
+                Weights.HIGH,
+                Weights.HIGH
         );
 
         App.taskManager.createTask(
                 "Cycling Session",
                 "Go cycling for cardiovascular exercise.",
                 Category.HEALTH,
-                LocalDateTime.of(2026, 9, 2, 17, 0),
+                LocalDateTime.of(2026, 9, 6, 9, 0),
                 90,
-                Priority.MEDIUM,
-                Effort.HIGH
-        );
-
-        App.taskManager.createTask(
-                "Mobility Routine",
-                "Complete a full-body mobility routine.",
-                Category.HEALTH,
-                LocalDateTime.of(2026, 9, 3, 7, 0),
-                30,
-                Priority.MEDIUM,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Lower Body Workout",
-                "Complete a lower body strength training session.",
-                Category.HEALTH,
-                LocalDateTime.of(2026, 9, 4, 16, 0),
-                75,
-                Priority.HIGH,
-                Effort.HIGH
-        );
-
-        App.taskManager.createTask(
-                "Swimming",
-                "Complete a recreational swimming workout.",
-                Category.HEALTH,
-                LocalDateTime.of(2026, 9, 5, 9, 0),
-                90,
-                Priority.MEDIUM,
-                Effort.HIGH
+                Weights.MEDIUM,
+                Weights.HIGH
         );
 
         App.taskManager.createTask(
                 "Recovery Session",
-                "Complete stretching and light recovery exercises.",
+                "Complete light stretching and recovery exercises.",
                 Category.HEALTH,
-                LocalDateTime.of(2026, 9, 5, 19, 0),
+                LocalDateTime.of(2026, 9, 6, 19, 0),
                 45,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Interval Running",
-                "Complete a high-intensity interval running session.",
-                Category.HEALTH,
-                LocalDateTime.of(2026, 9, 6, 8, 0),
-                60,
-                Priority.HIGH,
-                Effort.HIGH
-        );
-
-        App.taskManager.createTask(
-                "Prepare Healthy Snacks",
-                "Prepare healthy snacks for the upcoming week.",
-                Category.HEALTH,
-                LocalDateTime.of(2026, 9, 6, 16, 0),
-                60,
-                Priority.LOW,
-                Effort.MEDIUM
+                Weights.LOW,
+                Weights.LOW
         );
 
         App.taskManager.createTask(
@@ -480,118 +485,119 @@ public class MainController {
                 Category.HEALTH,
                 LocalDateTime.of(2026, 9, 7, 17, 0),
                 45,
-                Priority.MEDIUM,
-                Effort.MEDIUM
+                Weights.MEDIUM,
+                Weights.MEDIUM
         );
 
         App.taskManager.createTask(
                 "Long Walk",
-                "Go for a long walk to stay active and clear the mind.",
+                "Take a long walk to stay active and relax.",
                 Category.HEALTH,
-                LocalDateTime.of(2026, 9, 7, 18, 30),
+                LocalDateTime.of(2026, 9, 8, 18, 0),
                 75,
-                Priority.LOW,
-                Effort.LOW
+                Weights.LOW,
+                Weights.LOW
+        );
+
+
+        App.taskManager.createTask(
+                "Watch Movie",
+                "Relax and watch a movie.",
+                Category.LEISURE,
+                LocalDateTime.of(2026, 9, 1, 20, 0),
+                150,
+                Weights.LOW,
+                Weights.LOW
+        );
+
+        App.taskManager.createTask(
+                "Play Video Games",
+                "Spend some time playing video games.",
+                Category.LEISURE,
+                LocalDateTime.of(2026, 9, 2, 21, 0),
+                120,
+                Weights.LOW,
+                Weights.LOW
+        );
+
+        App.taskManager.createTask(
+                "Meet Friends",
+                "Meet friends and spend some time socialising.",
+                Category.LEISURE,
+                LocalDateTime.of(2026, 9, 3, 19, 0),
+                180,
+                Weights.MEDIUM,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Read a Book",
+                "Read several chapters of a book.",
+                Category.LEISURE,
+                LocalDateTime.of(2026, 9, 4, 20, 0),
+                90,
+                Weights.LOW,
+                Weights.LOW
+        );
+
+        App.taskManager.createTask(
+                "Watch Football",
+                "Watch a football match in the evening.",
+                Category.LEISURE,
+                LocalDateTime.of(2026, 9, 5, 20, 0),
+                120,
+                Weights.LOW,
+                Weights.LOW
         );
 
         App.taskManager.createTask(
                 "Visit Coffee Shop",
-                "Go to a coffee shop and relax for a while.",
+                "Spend some time relaxing at a coffee shop.",
                 Category.LEISURE,
-                LocalDateTime.of(2026, 9, 1, 18, 0),
+                LocalDateTime.of(2026, 9, 6, 14, 0),
                 90,
-                Priority.LOW,
-                Effort.LOW
+                Weights.LOW,
+                Weights.LOW
         );
 
         App.taskManager.createTask(
-                "Play Board Game",
-                "Spend the evening playing a board game.",
+                "Go Hiking",
+                "Spend the afternoon hiking and exploring outdoors.",
                 Category.LEISURE,
-                LocalDateTime.of(2026, 9, 2, 20, 0),
-                120,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Listen to Podcast",
-                "Listen to a podcast while relaxing.",
-                Category.LEISURE,
-                LocalDateTime.of(2026, 9, 3, 21, 0),
-                60,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Go for a Hike",
-                "Spend the afternoon hiking and exploring nature.",
-                Category.LEISURE,
-                LocalDateTime.of(2026, 9, 4, 9, 0),
+                LocalDateTime.of(2026, 9, 7, 10, 0),
                 180,
-                Priority.MEDIUM,
-                Effort.HIGH
-        );
-
-        App.taskManager.createTask(
-                "Visit Bookstore",
-                "Browse books and spend some time reading.",
-                Category.LEISURE,
-                LocalDateTime.of(2026, 9, 5, 14, 0),
-                90,
-                Priority.LOW,
-                Effort.LOW
+                Weights.MEDIUM,
+                Weights.HIGH
         );
 
         App.taskManager.createTask(
                 "Play Pool",
                 "Play pool with friends.",
                 Category.LEISURE,
-                LocalDateTime.of(2026, 9, 5, 19, 0),
+                LocalDateTime.of(2026, 9, 7, 19, 0),
                 120,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Try New Restaurant",
-                "Have dinner at a restaurant that you have not visited before.",
-                Category.LEISURE,
-                LocalDateTime.of(2026, 9, 6, 19, 0),
-                120,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Watch Documentary",
-                "Watch an interesting documentary.",
-                Category.LEISURE,
-                LocalDateTime.of(2026, 9, 7, 20, 0),
-                120,
-                Priority.LOW,
-                Effort.LOW
-        );
-
-        App.taskManager.createTask(
-                "Go Shopping",
-                "Spend some free time browsing shops.",
-                Category.LEISURE,
-                LocalDateTime.of(2026, 9, 8, 14, 0),
-                150,
-                Priority.LOW,
-                Effort.MEDIUM
+                Weights.LOW,
+                Weights.LOW
         );
 
         App.taskManager.createTask(
                 "Photography Walk",
-                "Take a walk around the city and practise photography.",
+                "Walk around the city and practise photography.",
                 Category.LEISURE,
-                LocalDateTime.of(2026, 9, 8, 16, 30),
+                LocalDateTime.of(2026, 9, 8, 15, 0),
                 120,
-                Priority.LOW,
-                Effort.MEDIUM
+                Weights.LOW,
+                Weights.MEDIUM
+        );
+
+        App.taskManager.createTask(
+                "Try New Restaurant",
+                "Have dinner at a restaurant you have never visited.",
+                Category.LEISURE,
+                LocalDateTime.of(2026, 9, 8, 19, 0),
+                120,
+                Weights.LOW,
+                Weights.LOW
         );
 
         return App.taskManager.getAllTasks();
