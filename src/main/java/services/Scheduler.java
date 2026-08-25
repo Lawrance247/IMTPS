@@ -14,8 +14,8 @@ import strategies.SchedulingStrategy;
 public class Scheduler {
 
     private SchedulingStrategy strategy;
-    private final LocalTime dailyStartTime;
-    private final LocalTime dailyEndTime;
+    private LocalTime dailyStartTime;
+    private LocalTime dailyEndTime;
 
     /**
      * Creates a scheduler with:
@@ -49,6 +49,11 @@ public class Scheduler {
         }
 
         this.strategy = strategy;
+    }
+
+    public void setAvailability(LocalTime start, LocalTime end){
+        this.dailyStartTime = start;
+        this.dailyEndTime = end;
     }
 
     /**

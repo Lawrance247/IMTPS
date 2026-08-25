@@ -2,6 +2,7 @@ package controllers;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -14,6 +15,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import models.Schedule;
@@ -44,6 +47,18 @@ public class MainController {
     private ComboBox<String> focusModeComboBox;
 
     @FXML
+    private Spinner<Integer> availabilityEndHrSpinner;
+
+    @FXML
+    private Spinner<Integer> availabilityEndMinSpinner;
+
+    @FXML
+    private Spinner<Integer> availabilityStartHrSpinner;
+
+    @FXML
+    private Spinner<Integer> availabilityStartMinSpinner;
+
+    @FXML
     private TableColumn<ScheduledTask, String> importanceColumn;
 
     @FXML
@@ -72,6 +87,10 @@ public class MainController {
       ObservableList<String> modes = FXCollections.observableArrayList("ACADEMIC", "FAMILY", "LEISURE", "HEALTH");
       focusModeComboBox.setItems(modes);
 
+        // Availability time spinners -> allows the user to select availability time.
+        setSpinner(availabilityStartHrSpinner, availabilityStartMinSpinner, 0, 23, 0, 59);
+        setSpinner(availabilityEndHrSpinner, availabilityEndMinSpinner, 0, 23, 0, 59);
+
       List<Task> allTasks = App.taskManager.getAllTasks();
 
       if(allTasks.isEmpty()){
@@ -90,6 +109,13 @@ public class MainController {
         }
       });
 
+    }
+
+    private void setSpinner(Spinner<Integer> hrSpinner, Spinner<Integer> minSpinner, int hrMin, int hrMax, int minutesMin, int minutesMax){
+        SpinnerValueFactory<Integer> hours = new SpinnerValueFactory.IntegerSpinnerValueFactory(hrMin, hrMax);
+        SpinnerValueFactory<Integer> minutes = new SpinnerValueFactory.IntegerSpinnerValueFactory(minutesMin, minutesMax);
+        hrSpinner.setValueFactory(hours);
+        minSpinner.setValueFactory(minutes);
     }
 
     private void setUpSchedule(List<Task> allTasks){
@@ -116,7 +142,7 @@ public class MainController {
 
         scheduledEndColumn.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getEndTime().format(formatter)) );
 
-        taskTable.setItems( FXCollections.observableArrayList(schedule) );     
+        taskTable.setItems( FXCollections.observableArrayList(schedule) );    
     }
 
     @FXML
@@ -145,6 +171,15 @@ public class MainController {
           setUpSchedule(App.taskManager.getAllTasks());
         }
 
+    }
+
+    @FXML
+    void handleGenerateSchedule(ActionEvent event) {
+        LocalTime availabilityStartTime = LocalTime.of(availabilityStartHrSpinner.getValue(), availabilityStartMinSpinner.getValue());
+        LocalTime availabilityEndTime = LocalTime.of(availabilityEndHrSpinner.getValue(), availabilityEndHrSpinner.getValue());
+
+        App.scheduler.setAvailability(availabilityStartTime, availabilityEndTime);
+        setUpSchedule(App.taskManager.getAllTasks());
     }
 
     @FXML

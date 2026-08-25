@@ -3,6 +3,7 @@ package controllers;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import app.App;
@@ -11,10 +12,12 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import models.ComparisonResult;
+import models.MetricRow;
 import models.Schedule;
 import models.ScheduleMetrics;
 import models.ScheduledTask;
@@ -46,28 +49,31 @@ public class ComparisonController {
     private Label focusModeLabel;
 
     @FXML
+    private ComboBox<?> pickPrefferedStrategy;
+
+    @FXML
     private TableColumn<ScheduledTask, String> importanceColumnA;
 
     @FXML
     private TableColumn<ScheduledTask, String> importanceColumnB;
 
     @FXML
-    private TableColumn<ScheduleMetrics, String> metricAColumn;
+    private TableColumn<MetricRow, String> metricAColumn;
 
     @FXML
-    private TableColumn<ScheduleMetrics, String> metricBColumn;
+    private TableColumn<MetricRow, String> metricBColumn;
 
     @FXML
-    private TableColumn<ScheduleMetrics, String> metricDefinitionColumn;
+    private TableColumn<MetricRow, String> metricDefinitionColumn;
 
     @FXML
-    private TableColumn<ScheduleMetrics, String> metricDirectionColumn;
+    private TableColumn<MetricRow, String> metricDirectionColumn;
 
     @FXML
-    private TableColumn<ScheduleMetrics, String> metricNameColumn;
+    private TableColumn<MetricRow, String> metricNameColumn;
 
     @FXML
-    private TableView<ScheduleMetrics> metricsTable;
+    private TableView<MetricRow> metricsTable;
 
     @FXML
     private TableColumn<ScheduledTask, String> nameColumnA;
@@ -105,28 +111,57 @@ public class ComparisonController {
         Schedule edfSchedule = App.scheduler.generateSchedule(tasks, LocalDateTime.of(2026, 8, 28, 8, 0));
         setUpScheduleTable(edfSchedule.getScheduledTasks(), "A");
         strategyALabel.setText("Earliest Deadline First Strategy");
-        strategyBLabel.setText("Weighted Focus Strategy");
+        
 
         App.scheduler.setStrategy(new WeightedFocusStrategy(FocusMode.ACADEMIC));
         Schedule wfSchedule = App.scheduler.generateSchedule(tasks, LocalDateTime.of(2026, 8, 28, 8, 0));
         setUpScheduleTable(wfSchedule.getScheduledTasks(), "B");
+        strategyBLabel.setText("Weighted Focus Strategy");
 
         Comparison scheduleComparison = new Comparison(edfSchedule, wfSchedule, FocusMode.ACADEMIC);
-
         ComparisonResult compResults = scheduleComparison.compare();
 
         ScheduleMetrics edfMetrics = compResults.getScheduleAMetrics();
         ScheduleMetrics wfMetrics = compResults.getScheduleBMetrics();
 
+        List<MetricRow> metrics = new ArrayList<>();
+
+        // deadline clashes
+        metrics.add(new MetricRow("Deadline Clashes","Number of tasks whose scheduled finish is after their deadline.","Lower", String.valueOf(edfMetrics.getDeadlineClashes()), String.valueOf(wfMetrics.getDeadlineClashes())));
+
+        // Total lateness
+        metrics.add(new MetricRow("Total Lateness", "Total amount of time deadlines are exceeded.", "Lower", formatMinutes(edfMetrics.getTotalLateness()), formatMinutes(wfMetrics.getTotalLateness())));
+        
+        // Average Slack
+        metrics.add(new MetricRow("Average Slack", "Average deadline minus scheduled finish, including negative values.", "Higher", formatMinutes(Math.round(edfMetrics.getAverageSlack())), formatMinutes(Math.round(wfMetrics.getAverageSlack()))));
+
+        // Weighted Lateness
+        metrics.add(new MetricRow("Weighted Lateness", "Lateness weighted by task importance.", "Lower", String.valueOf(edfMetrics.getWeightedLateness()), String.valueOf(wfMetrics.getWeightedLateness())
+        ));
+
+        // Focus Alignment
+        metrics.add(new MetricRow("Focus Alignment", "Importance-weighted proportion of the first half of prioritised tasks matching the focus mode.", "Higher", String.format("%.1f%%", edfMetrics.getFocusAlignment()), String.format("%.1f%%", wfMetrics.getFocusAlignment())
+        ));
+
+        setUpMetricsTable(metrics, "EDF Strategy", "WF Strategy");
+
         focusModeLabel.setText(FocusMode.ACADEMIC.toString());
       }
+    }
+
+
+    private String formatMinutes(long totalMinutes) {
+        String sign = totalMinutes < 0 ? "-" : "";
+        long abs = Math.abs(totalMinutes);
+        long hours = abs / 60;
+        long mins = abs % 60;
+        return hours > 0 ? sign + hours + "h " + mins + "m" : sign + mins + "m";
     }
 
     private void setUpScheduleTable(List<ScheduledTask> schedule, String scheduleType){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
 
         if (scheduleType.equals("B")){
-          nameColumnB.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getTask().getTitle()) );
           nameColumnB.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getTask().getTitle()) );
 
           importanceColumnB.setCellValueFactory( cellData -> new SimpleStringProperty(cellData.getValue().getTask().getImportance().toString()) );
@@ -151,6 +186,20 @@ public class ComparisonController {
 
           scheduleATable.setItems( FXCollections.observableArrayList(schedule) ); 
         }    
+    }
+
+    private void setUpMetricsTable(List<MetricRow> metrics, String strategyAName, String strategyBName){
+      metricNameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMetricName()));
+      metricNameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMetricName()));
+      metricDefinitionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDefinition()));
+      metricDirectionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDirection()));
+      metricAColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getValueA()));
+      metricBColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getValueB()));
+
+      metricAColumn.setText(strategyAName);
+      metricBColumn.setText(strategyBName);
+
+      metricsTable.setItems(FXCollections.observableArrayList(metrics));
     }
 
     @FXML
