@@ -51,6 +51,10 @@ public class Scheduler {
         this.strategy = strategy;
     }
 
+    public SchedulingStrategy getStrategy(){
+        return this.strategy;
+    }
+
     public void setAvailability(LocalTime start, LocalTime end){
         this.dailyStartTime = start;
         this.dailyEndTime = end;

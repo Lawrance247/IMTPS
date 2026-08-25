@@ -9,6 +9,7 @@ import java.util.List;
 import app.App;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -49,7 +50,7 @@ public class ComparisonController {
     private Label focusModeLabel;
 
     @FXML
-    private ComboBox<?> pickPrefferedStrategy;
+    private ComboBox<String> pickPrefferedStrategy;
 
     @FXML
     private TableColumn<ScheduledTask, String> importanceColumnA;
@@ -102,6 +103,7 @@ public class ComparisonController {
 
     @FXML
     void initialize(){
+      ObservableList<String> availableStrategies = FXCollections.observableArrayList();
       //get tasks
       List<Task> tasks = App.taskManager.getAllTasks();
 
@@ -111,12 +113,16 @@ public class ComparisonController {
         Schedule edfSchedule = App.scheduler.generateSchedule(tasks, LocalDateTime.of(2026, 8, 28, 8, 0));
         setUpScheduleTable(edfSchedule.getScheduledTasks(), "A");
         strategyALabel.setText("Earliest Deadline First Strategy");
+
+        availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
         
 
         App.scheduler.setStrategy(new WeightedFocusStrategy(FocusMode.ACADEMIC));
         Schedule wfSchedule = App.scheduler.generateSchedule(tasks, LocalDateTime.of(2026, 8, 28, 8, 0));
         setUpScheduleTable(wfSchedule.getScheduledTasks(), "B");
         strategyBLabel.setText("Weighted Focus Strategy");
+
+        availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
 
         Comparison scheduleComparison = new Comparison(edfSchedule, wfSchedule, FocusMode.ACADEMIC);
         ComparisonResult compResults = scheduleComparison.compare();
@@ -144,6 +150,8 @@ public class ComparisonController {
         ));
 
         setUpMetricsTable(metrics, "EDF Strategy", "WF Strategy");
+
+        pickPrefferedStrategy.setItems(availableStrategies);
 
         focusModeLabel.setText(FocusMode.ACADEMIC.toString());
       }
@@ -205,7 +213,14 @@ public class ComparisonController {
     @FXML
     void handleClose(ActionEvent event) {
       try {
-          MainController controller = SceneManager.switchTo("/fxml/main-view.fxml");
+        String prefferedStrategy = pickPrefferedStrategy.getValue();
+        if (prefferedStrategy.equals("Earliest Deadline First Strategy")){
+          App.scheduler.setStrategy(new EarliestDeadlineFirstStrategy());
+        }
+        else{
+          App.scheduler.setStrategy(new WeightedFocusStrategy(FocusMode.ACADEMIC));
+        }
+        MainController controller = SceneManager.switchTo("/fxml/main-view.fxml");
       } catch (IOException e) {
         e.printStackTrace();
       }

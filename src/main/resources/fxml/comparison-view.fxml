@@ -32,8 +32,8 @@
                 </padding>
                 <Label text="Focus Mode:" />
                 <Label fx:id="focusModeLabel" styleClass="focus-mode-value" />
-            <Region prefHeight="26.0" prefWidth="1000.0" />
-            <ComboBox fx:id="pickPrefferedStrategy" prefWidth="150.0" />
+            <Region HBox.hgrow="ALWAYS" />
+            <ComboBox fx:id="pickPrefferedStrategy" minWidth="190.0" promptText="Pick Your Preffered Strategy" />
             </HBox>
         </VBox>
     </top>
