@@ -8,4 +8,7 @@ import models.Task;
 public interface SchedulingStrategy {
     // sinenkhosi modified the method adding the referenceTime parameter
     List<Task> generateSchedule(List<Task> tasks, LocalDateTime referenceTime);
+
+    // sinenkhosi added this method to get the name of the implemented strategy
+    String getStrategyName();
 }

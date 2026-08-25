@@ -103,4 +103,9 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
             return 1;
         }
     }
+
+    @Override
+    public String getStrategyName(){
+        return "Weighted Focus Strategy";
+    }
 }

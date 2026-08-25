@@ -30,4 +30,9 @@ public class EarliestDeadlineFirstStrategy implements SchedulingStrategy {
 
         return schedule;
     }
+
+    @Override
+    public String getStrategyName(){
+        return "Earliest Deadline First Strategy";
+    }
 }
