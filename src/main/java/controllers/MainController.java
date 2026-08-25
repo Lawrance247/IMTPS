@@ -1,7 +1,6 @@
 package controllers;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -72,13 +71,13 @@ public class MainController {
     private TableColumn<ScheduledTask, String> scheduledStartColumn;
 
     @FXML
-    private Label statusLabel;
-
-    @FXML
     private Label taskCountLabel;
 
     @FXML
     private TableView<ScheduledTask> taskTable;
+
+    @FXML
+    private Label nameOfStrategyLabel;
 
     private Task activeSelectedTask = null;
 
@@ -109,7 +108,7 @@ public class MainController {
           deleteTaskButton.setDisable(true);               
         }
       });
-
+        nameOfStrategyLabel.setText(App.scheduler.getStrategy().getStrategyName());
     }
 
     private void setSpinner(Spinner<Integer> hrSpinner, Spinner<Integer> minSpinner, int hrMin, int hrMax, int minutesMin, int minutesMax){
@@ -171,7 +170,6 @@ public class MainController {
           App.taskManager.deleteTask(activeSelectedTask.getId());
           setUpSchedule(App.taskManager.getAllTasks());
         }
-
     }
 
     @FXML

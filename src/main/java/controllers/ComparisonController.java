@@ -1,7 +1,6 @@
 package controllers;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,7 +98,6 @@ public class ComparisonController {
 
     @FXML
     private Label strategyBLabel;
-
 
     @FXML
     void initialize(){
@@ -216,7 +214,7 @@ public class ComparisonController {
     void handleClose(ActionEvent event) {
       try {
         String prefferedStrategy = pickPrefferedStrategy.getValue();
-        if (prefferedStrategy.equals("Earliest Deadline First Strategy")){
+        if ((prefferedStrategy != null) && prefferedStrategy.equals("Earliest Deadline First Strategy")){
           App.scheduler.setStrategy(new EarliestDeadlineFirstStrategy());
         }
         else{

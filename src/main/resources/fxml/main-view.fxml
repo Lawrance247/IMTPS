@@ -124,8 +124,9 @@
             </padding>
             <Label fx:id="taskCountLabel" text="0 tasks" />
             <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="nameOfStrategyLabel" text="Earliest Deadline First Strategy" textFill="#919191" />
+         <Region layoutX="79.0" layoutY="18.0" HBox.hgrow="ALWAYS" />
          <Button fx:id="GenerateScheduleBtn" mnemonicParsing="false" onAction="#handleGenerateSchedule" text="Generate Schedule" />
-            <Label fx:id="statusLabel" text="" />
         </HBox>
     </bottom>
 
