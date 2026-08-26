@@ -7,6 +7,7 @@ import repositories.TaskDB;
 import services.Scheduler;
 import services.TaskManager;
 import strategies.EarliestDeadlineFirstStrategy;
+import strategies.WeightedFocusStrategy;
 import utils.SceneManager;
 
 /**
@@ -14,7 +15,9 @@ import utils.SceneManager;
  */
 public class App extends Application {
     public final static TaskManager taskManager = new TaskManager(new TaskDB());
-    public final static Scheduler scheduler = new Scheduler(new EarliestDeadlineFirstStrategy(), LocalTime.of(8, 0), LocalTime.of(18, 0));
+    public final static EarliestDeadlineFirstStrategy edfStrategy = new EarliestDeadlineFirstStrategy();
+    public final static WeightedFocusStrategy wfStrategy = new WeightedFocusStrategy();
+    public final static Scheduler scheduler = new Scheduler(edfStrategy , LocalTime.of(8, 0), LocalTime.of(18, 0));
 
     public static void main(String[] args){
         launch(args);
