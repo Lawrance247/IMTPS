@@ -19,7 +19,7 @@ public class TaskManager
     }
 
 
-    public Task createTask(String title, String description, Category category, LocalDateTime deadline, int durationMinutes, Weights effort, Weights importance) 
+    public Task createTask(String title, String description, Category category, LocalDateTime deadline, int durationMinutes, Weights importance, Weights effort) 
     {
         validateDeadline(deadline);
         validateTaskFields(title, category, durationMinutes, effort, importance);

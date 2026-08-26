@@ -24,13 +24,26 @@ import utils.Category;
 import utils.SceneManager;
 import utils.Weights;
 
+
+
+/**
+ * Controller for the add/edit task form ({@code /fxml/task-form.fxml}).
+ *
+ * <p>This single form serves two purposes, distinguished by whether {@link #taskToEdit} is {@code null}: when {@code null}, saving creates a
+ * new {@link Task}; when set (via {@link #setTaskToEdit(Task)}), saving updates that existing task instead. Both paths delegate persistence to
+ * {@code App.taskManager}.</p>
+ *
+ * <p><b>Collaborators:</b> reads/writes tasks through the static {@code App.taskManager} ({@code services.TaskManager}); reads
+ * {@code utils.Category} and {@code utils.Weights} for the dropdown/sliders; navigates back to {@link MainController} via
+ * {@code utils.SceneManager}.</p>
+ */
 public class TaskFormController {
 
     @FXML
     private Button cancelButton;
 
     @FXML
-    private ComboBox<String> categoryComboBox;
+    private ComboBox<Category> categoryComboBox;
 
     @FXML
     private DatePicker deadlinePicker;
@@ -69,35 +82,40 @@ public class TaskFormController {
     @FXML
     private TextField taskDescription;
 
+
+    /** The task being edited, or {@code null} when the form is in "create" mode. */
     private Task taskToEdit = null;
 
+
+    /**
+     * FXML lifecycle callback. Populates the category dropdown, configures the hour/minute spinners for a 24-hour clock, and wires the
+     * importance/effort sliders to keep their numeric labels in sync as the user drags them.
+     */
     @FXML
     void initialize() {
-        //use enums later for categories
-        ObservableList<String> categories = FXCollections.observableArrayList(
-            "ACADEMIC",
-            "FAMILY",
-            "LEISURE",
-            "HEALTH"
-        );
+      ObservableList<Category> categories = FXCollections.observableArrayList(Category.ACADEMIC, Category.FAMILY, Category.LEISURE, Category.HEALTH);
 
-        //set spinners for user to select times (24hr clock)
-        SpinnerValueFactory<Integer> hours = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23);
-        SpinnerValueFactory<Integer> minutes = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59);
+      //set spinners for user to select times (24hr clock)
+      SpinnerValueFactory<Integer> hours = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23);
+      SpinnerValueFactory<Integer> minutes = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59);
 
-        categoryComboBox.setItems(categories);
-        hourSpinner.setValueFactory(hours);
-        minuteSpinner.setValueFactory(minutes);
-        
-        //keeps slider label showing slider's current value
-        importanceSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            importanceValueLabel.setText(String.valueOf(newValue.intValue()));
-        });
-        effortSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            effortValueLabel.setText(String.valueOf(newValue.intValue()));
-        });
+      categoryComboBox.setItems(categories);
+      hourSpinner.setValueFactory(hours);
+      minuteSpinner.setValueFactory(minutes);
+      
+      //keeps slider label showing slider's current value
+      importanceSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+          importanceValueLabel.setText(String.valueOf(newValue.intValue()));
+      });
+      effortSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+          effortValueLabel.setText(String.valueOf(newValue.intValue()));
+      });
     }
 
+
+    /**
+     * "Cancel" button handler. Discards any changes and returns to the main view.
+     */
     @FXML
     void handleCancel(ActionEvent event) {
         try {
@@ -108,12 +126,19 @@ public class TaskFormController {
         }
     }
 
+
+    /**
+     * "Save" button handler. Reads every field, builds the deadline from the date picker plus hour/minute spinners, converts the importance/effort
+     * slider values (1/2/3) to {@link Weights}, and; based on whether {@link #taskToEdit} is set and its title still matches the name field,
+     * either updates the existing task via {@link #updateEditedTask} or creates a new one via {@link #createNewTask}. Any exception (parsing,
+     * validation from {@code TaskManager}, etc.) is caught and surfaced to the user through {@link #errorLabel} rather than propagating.
+     */
     @FXML
     void handleSave(ActionEvent event) {
         try{
             String taskName = nameField.getText();
             String description = taskDescription.getText();
-            Category category = Category.valueOf(categoryComboBox.getValue().toUpperCase());
+            Category category = categoryComboBox.getValue();
 
             //deadline
             LocalDate date = deadlinePicker.getValue();
@@ -122,15 +147,15 @@ public class TaskFormController {
 
             Integer duration = Integer.parseInt(durationField.getText());
 
-            Weights priority = (importanceValueLabel.getText().equals("1")) ? Weights.LOW :
+            Weights importance = (importanceValueLabel.getText().equals("1")) ? Weights.LOW :
             (importanceValueLabel.getText().equals("2")) ? Weights.MEDIUM : Weights.HIGH;
             Weights effort = (effortValueLabel.getText().equals("1")) ? Weights.LOW :
             (effortValueLabel.getText().equals("2")) ? Weights.MEDIUM : Weights.HIGH;
 
             if ( (taskToEdit != null) && ( taskName.equals(taskToEdit.getTitle()) ) ){
-                updateEditedTask(description, category, deadline, duration, priority, effort);
+                updateEditedTask(description, category, deadline, duration, importance, effort);
             }else{
-                createNewTask(taskName, description, category, deadline, duration, priority, effort);
+                createNewTask(taskName, description, category, deadline, duration, importance, effort);
             }
         }catch(Exception e){
             //let user know task was not added to db
@@ -140,12 +165,30 @@ public class TaskFormController {
         }
     }
 
-    private void updateEditedTask(String description, Category category, LocalDateTime deadline, int duration, Weights priority, Weights effort){
+
+    /**
+     * Applies the given field values to {@link #taskToEdit}, persists the change via {@code App.taskManager.updateTask}, shows a success message,
+     * and returns to the main view.
+     *
+     * <p>Note the task's title itself is not updated here — the title field
+     * is disabled while editing (see {@link #setTaskToEdit(Task)}), and
+     * {@link #handleSave} only routes into this method when the name field
+     * still equals the existing title, so title changes are never applied
+     * through this path.</p>
+     *
+     * @param description new description
+     * @param category    new category
+     * @param deadline    new deadline
+     * @param duration    new duration, in minutes
+     * @param importance    new importance weight
+     * @param effort      new effort weight
+     */
+    private void updateEditedTask(String description, Category category, LocalDateTime deadline, int duration, Weights importance, Weights effort){
         taskToEdit.setDescription(description);
         taskToEdit.setCategory(category);
         taskToEdit.setDeadline(deadline);
         taskToEdit.setDurationMinutes(duration);
-        taskToEdit.setImportance(priority);
+        taskToEdit.setImportance(importance);
         taskToEdit.setEffort(effort);
 
         App.taskManager.updateTask(taskToEdit);
@@ -159,14 +202,29 @@ public class TaskFormController {
         }
     }
 
-    private Task createNewTask(String taskName, String description, Category category, LocalDateTime deadline, int duration, Weights priority, Weights effort){
+
+    /**
+     * Creates a new {@link Task} via {@code App.taskManager.createTask} from the given field values and shows a success message. Unlike
+     * {@link #updateEditedTask}, this does not navigate away afterwards — the form stays open (see refactor notes: the fields are also not reset,
+     * despite {@link #resetFields()} existing for that purpose).
+     *
+     * @param taskName    new task's title
+     * @param description new task's description
+     * @param category    new task's category
+     * @param deadline    new task's deadline
+     * @param duration    new task's duration, in minutes
+     * @param importance    new task's importance weight
+     * @param effort      new task's effort weight
+     * @return the newly created task
+     */
+    private Task createNewTask(String taskName, String description, Category category, LocalDateTime deadline, int duration, Weights importance, Weights effort){
         Task task = App.taskManager.createTask(
             taskName,
             description,
             category,
             deadline,
             duration,
-            priority,
+            importance,
             effort
         );
         errorLabel.setText("Task added successfully.");
@@ -181,6 +239,13 @@ public class TaskFormController {
         categoryComboBox.setPromptText("");
     }
 
+
+    /**
+     * Puts the form into "edit" mode for the given task, pre-filling every field from it. The name field is disabled while editing, since
+     * {@link #handleSave} uses an unchanged name as the signal that this is an edit rather than a new task.
+     *
+     * @param task the task to edit; passing {@code null} opens a blank form.
+     */
     public void setTaskToEdit(Task task){
         this.taskToEdit = task;
         if (taskToEdit != null) {
@@ -188,7 +253,7 @@ public class TaskFormController {
             nameField.setDisable(true);
 
             taskDescription.setText(task.getDescription());
-            categoryComboBox.setValue(task.getCategory().toString());
+            categoryComboBox.setValue(task.getCategory());
             
             LocalDateTime dateTime = task.getDeadline();
             LocalDate date = LocalDate.of(dateTime.getYear(), dateTime.getMonthValue(), dateTime.getDayOfMonth());
