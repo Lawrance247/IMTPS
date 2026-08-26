@@ -156,6 +156,7 @@ public class TaskFormController {
                 updateEditedTask(description, category, deadline, duration, importance, effort);
             }else{
                 createNewTask(taskName, description, category, deadline, duration, importance, effort);
+                resetFields();
             }
         }catch(Exception e){
             //let user know task was not added to db
@@ -191,11 +192,10 @@ public class TaskFormController {
         taskToEdit.setImportance(importance);
         taskToEdit.setEffort(effort);
 
-        App.taskManager.updateTask(taskToEdit);
-        errorLabel.setText("Task updated successfully.");
-        errorLabel.setTextFill(Color.GREEN);
-
         try {
+            App.taskManager.updateTask(taskToEdit);
+            errorLabel.setText("Task updated successfully.");
+            errorLabel.setTextFill(Color.GREEN);
             MainController controller = SceneManager.switchTo("/fxml/main-view.fxml");
         } catch (IOException e) {
             e.printStackTrace();
@@ -237,6 +237,11 @@ public class TaskFormController {
         nameField.setText("");
         taskDescription.setText("");
         categoryComboBox.setPromptText("");
+        deadlinePicker.setValue(null);
+        importanceSlider.setValue(2);
+        importanceValueLabel.setText("2");
+        effortSlider.setValue(2);
+        effortValueLabel.setText("2");
     }
 
 
