@@ -23,8 +23,6 @@ import models.ScheduleMetrics;
 import models.ScheduledTask;
 import models.Task;
 import services.Comparison;
-import strategies.EarliestDeadlineFirstStrategy;
-import strategies.WeightedFocusStrategy;
 import utils.Category;
 import utils.SceneManager;
 
@@ -135,7 +133,7 @@ public class ComparisonController {
       // generate schedules
       if (!tasks.isEmpty()){
         // ==== SET UP FIRST STRATEGY ====
-        App.scheduler.setStrategy(new EarliestDeadlineFirstStrategy());
+        App.scheduler.setStrategy(App.edfStrategy);
         Schedule edfSchedule = App.scheduler.generateSchedule(tasks, null);
         setUpScheduleTable(edfSchedule.getScheduledTasks(), "A");
         strategyALabel.setText("Earliest Deadline First Strategy");
@@ -143,9 +141,10 @@ public class ComparisonController {
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
         
         // ==== SET UP SECOND STRATEGY ===
-        App.scheduler.setStrategy(new WeightedFocusStrategy(focusMode));
+        App.scheduler.setStrategy(App.wfStrategy);
         Schedule wfSchedule = App.scheduler.generateSchedule(tasks, null);
         setUpScheduleTable(wfSchedule.getScheduledTasks(), "B");
+        focusMode = App.wfStrategy.getFocusMode(); //set focus mode
         strategyBLabel.setText("Weighted Focus Strategy");
 
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
@@ -201,16 +200,6 @@ public class ComparisonController {
         return hours > 0 ? sign + hours + "h " + mins + "m" : sign + mins + "m";
     }
 
-
-    /**
-     * Sets the focus category used for Strategy B and focus-alignment scoring. Intended to be called by {@code MainController} right after
-     * navigating here.
-     *
-     * @param mode the focus category to use
-     */
-    public void setFocusMode(Category mode){
-      this.focusMode = mode;
-    }
 
 
     /**
@@ -282,10 +271,10 @@ public class ComparisonController {
       try {
         String prefferedStrategy = pickPrefferedStrategy.getValue();
         if ((prefferedStrategy != null) && prefferedStrategy.equals("Earliest Deadline First Strategy")){
-          App.scheduler.setStrategy(new EarliestDeadlineFirstStrategy());
+          App.scheduler.setStrategy(App.edfStrategy);
         }
         else{
-          App.scheduler.setStrategy(new WeightedFocusStrategy(focusMode));
+          App.scheduler.setStrategy(App.wfStrategy);
           System.out.println(focusMode.toString());
         }
         MainController controller = SceneManager.switchTo("/fxml/main-view.fxml");

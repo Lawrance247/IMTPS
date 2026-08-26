@@ -210,11 +210,11 @@ public class MainController {
     @FXML
     void handleCompareStrategies(ActionEvent event) {
       try {
-          ComparisonController controller = SceneManager.switchTo("/fxml/comparison-view.fxml");
           Category mode = focusModeComboBox.getValue();
           if(mode != null){
-            controller.setFocusMode(mode);
+            App.wfStrategy.setFocusMode(mode);
           }
+          ComparisonController controller = SceneManager.switchTo("/fxml/comparison-view.fxml");
       } catch (IOException e) {
         e.printStackTrace();
       }
