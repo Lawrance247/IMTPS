@@ -28,6 +28,21 @@ import strategies.WeightedFocusStrategy;
 import utils.Category;
 import utils.SceneManager;
 
+
+/**
+ * Controller for the strategy comparison view ({@code /fxml/comparison-view.fxml}).
+ *
+ * <p>On {@link #initialize()}, this controller takes every task currently held by {@code App.taskManager}, generates two schedules from them — one
+ * using {@code strategies.EarliestDeadlineFirstStrategy} ("Strategy A") and one using {@code strategies.WeightedFocusStrategy}
+ * for {@link #focusMode} ("Strategy B") — runs both through {@code services.Comparison}, and displays the two schedules side by
+ * side plus a metric-by-metric comparison table. The user can then pick a preferred strategy from a dropdown before returning to
+ * the main view, which becomes the scheduler's active strategy going forward.</p>
+ *
+ * <p><b>Collaborators:</b> reads tasks via {@code App.taskManager}; builds schedules via {@code App.scheduler} together with
+ * {@code strategies.EarliestDeadlineFirstStrategy}/{@code strategies.WeightedFocusStrategy}; scores them via {@code services.Comparison},
+ * consuming its {@link ComparisonResult} and {@link ScheduleMetrics}; renders rows via {@link MetricRow} and {@link ScheduledTask}; navigates
+ *  back to {@link MainController} via {@code utils.SceneManager}.</p>
+ */
 public class ComparisonController {
 
     @FXML
@@ -99,8 +114,18 @@ public class ComparisonController {
     @FXML
     private Label strategyBLabel;
 
+
+    /**
+     * The focus category used for Strategy B (WeightedFocusStrategy) and for scoring focus alignment. Defaults to {@code Category.ACADEMIC} until
+     * {@link #setFocusMode(Category)} is called.
+     */
     private Category focusMode = Category.ACADEMIC;
 
+
+    /**
+     * FXML lifecycle callback. Builds both candidate schedules (Earliest Deadline First and Weighted Focus), compares them via
+     * {@code services.Comparison}, and populates the two schedule tables plus the metrics table. Does nothing if there are no tasks to schedule.
+     */
     @FXML
     void initialize(){
       ObservableList<String> availableStrategies = FXCollections.observableArrayList();
@@ -161,6 +186,13 @@ public class ComparisonController {
     }
 
 
+
+    /**
+     * Formats a signed minute count as {@code "<sign><h>h <m>m"} (hours omitted when zero), e.g. {@code -95} -> {@code "-1h 35m"}.
+     *
+     * @param totalMinutes the minute value to format; may be negative
+     * @return a human-readable duration string
+     */
     private String formatMinutes(long totalMinutes) {
         String sign = totalMinutes < 0 ? "-" : "";
         long abs = Math.abs(totalMinutes);
@@ -169,10 +201,25 @@ public class ComparisonController {
         return hours > 0 ? sign + hours + "h " + mins + "m" : sign + mins + "m";
     }
 
+
+    /**
+     * Sets the focus category used for Strategy B and focus-alignment scoring. Intended to be called by {@code MainController} right after
+     * navigating here.
+     *
+     * @param mode the focus category to use
+     */
     public void setFocusMode(Category mode){
       this.focusMode = mode;
     }
 
+
+    /**
+     * Binds either the "A" or "B" schedule table's columns to the given scheduled tasks, formatting dates with {@code "dd MMM yyyy, HH:mm"}.
+     *
+     * @param schedule     the scheduled tasks to display, one per row
+     * @param scheduleType {@code "A"} or {@code "B"}; any other value is
+     *                     treated the same as {@code "A"}
+     */
     private void setUpScheduleTable(List<ScheduledTask> schedule, String scheduleType){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
 
@@ -203,6 +250,14 @@ public class ComparisonController {
         }    
     }
 
+
+    /**
+     * Binds the metrics table's columns to the given {@link MetricRow} list and labels the value columns with each strategy's name.
+     *
+     * @param metrics       the rows to display, one per metric
+     * @param strategyAName header text for the Strategy A value column
+     * @param strategyBName header text for the Strategy B value column
+     */
     private void setUpMetricsTable(List<MetricRow> metrics, String strategyAName, String strategyBName){
       metricNameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMetricName()));
       metricDefinitionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDefinition()));
@@ -216,6 +271,12 @@ public class ComparisonController {
       metricsTable.setItems(FXCollections.observableArrayList(metrics));
     }
 
+
+    /**
+     * "Close" button handler. Applies whichever strategy the user picked in {@code pickPrefferedStrategy} to {@code App.scheduler} (matched by
+     * strategy display name; anything other than an exact match on "Earliest Deadline First Strategy" falls back to {@code WeightedFocusStrategy}),
+     * then returns to the main view.
+     */
     @FXML
     void handleClose(ActionEvent event) {
       try {
