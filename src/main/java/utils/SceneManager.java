@@ -36,7 +36,7 @@ public class SceneManager {
         mainStage.setScene(scene);
         mainStage.show();
 
-        FadeTransition ft = new FadeTransition(Duration.millis(1000), root);
+        FadeTransition ft = new FadeTransition(Duration.millis(500), root);
         ft.setFromValue(0.0);
         ft.setToValue(1.0);
         ft.play();
