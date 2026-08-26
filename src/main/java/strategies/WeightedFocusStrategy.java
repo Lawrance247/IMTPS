@@ -17,10 +17,14 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
     private static final double URGENCY_WEIGHT = 0.20;
     private static final double EFFORT_WEIGHT = 0.10;
 
-    private final Category focusMode;
+    private Category focusMode; // Sinenkhosi changed this to be modifiable
 
     public WeightedFocusStrategy(Category focusMode) {
         this.focusMode = focusMode;
+    }
+
+    public WeightedFocusStrategy(){
+        this.focusMode = Category.ACADEMIC;
     }
 
     @Override
@@ -102,6 +106,14 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
         } else {
             return 1;
         }
+    }
+
+    public Category getFocusMode(){
+        return this.focusMode;
+    }
+
+    public void setFocusMode(Category mode){
+        this.focusMode = mode;
     }
 
     @Override
