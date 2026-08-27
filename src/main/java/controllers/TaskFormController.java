@@ -95,7 +95,7 @@ public class TaskFormController {
     void initialize() {
       ObservableList<Category> categories = FXCollections.observableArrayList(Category.ACADEMIC, Category.FAMILY, Category.LEISURE, Category.HEALTH);
 
-      //set spinners for user to select times (24hr clock)
+      /** set spinners for user to select times (24hr clock) */
       SpinnerValueFactory<Integer> hours = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23);
       SpinnerValueFactory<Integer> minutes = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59);
 
@@ -103,7 +103,7 @@ public class TaskFormController {
       hourSpinner.setValueFactory(hours);
       minuteSpinner.setValueFactory(minutes);
       
-      //keeps slider label showing slider's current value
+      /** keeps slider label showing slider's current value */
       importanceSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
           importanceValueLabel.setText(String.valueOf(newValue.intValue()));
       });
@@ -140,7 +140,7 @@ public class TaskFormController {
             String description = taskDescription.getText();
             Category category = categoryComboBox.getValue();
 
-            //deadline
+            /** deadline */
             LocalDate date = deadlinePicker.getValue();
             LocalTime time = LocalTime.of(hourSpinner.getValue(), minuteSpinner.getValue());
             LocalDateTime deadline = LocalDateTime.of(date, time);
@@ -149,6 +149,7 @@ public class TaskFormController {
 
             Weights importance = (importanceValueLabel.getText().equals("1")) ? Weights.LOW :
             (importanceValueLabel.getText().equals("2")) ? Weights.MEDIUM : Weights.HIGH;
+
             Weights effort = (effortValueLabel.getText().equals("1")) ? Weights.LOW :
             (effortValueLabel.getText().equals("2")) ? Weights.MEDIUM : Weights.HIGH;
 
@@ -170,12 +171,6 @@ public class TaskFormController {
     /**
      * Applies the given field values to {@link #taskToEdit}, persists the change via {@code App.taskManager.updateTask}, shows a success message,
      * and returns to the main view.
-     *
-     * <p>Note the task's title itself is not updated here — the title field
-     * is disabled while editing (see {@link #setTaskToEdit(Task)}), and
-     * {@link #handleSave} only routes into this method when the name field
-     * still equals the existing title, so title changes are never applied
-     * through this path.</p>
      *
      * @param description new description
      * @param category    new category
@@ -205,8 +200,7 @@ public class TaskFormController {
 
     /**
      * Creates a new {@link Task} via {@code App.taskManager.createTask} from the given field values and shows a success message. Unlike
-     * {@link #updateEditedTask}, this does not navigate away afterwards — the form stays open (see refactor notes: the fields are also not reset,
-     * despite {@link #resetFields()} existing for that purpose).
+     * {@link #updateEditedTask}, this does not navigate away afterwards, the form stays open.
      *
      * @param taskName    new task's title
      * @param description new task's description
@@ -233,6 +227,11 @@ public class TaskFormController {
         return task;
     }
 
+
+    /**
+     * Clears the form back to a blank "create" state: name/description fields, category prompt, deadline picker, and both sliders (reset to
+     * the default value of 2 / MEDIUM). Called from {@link #handleSave} after successfully creating a new task.
+     */
     private void resetFields(){
         nameField.setText("");
         taskDescription.setText("");
