@@ -210,13 +210,18 @@ public class MainController {
     @FXML
     void handleCompareStrategies(ActionEvent event) {
       try {
-          Category mode = focusModeComboBox.getValue();
-          if(mode != null){
-            App.wfStrategy.setFocusMode(mode);
-          }
+          setUserFocusMode();
           ComparisonController controller = SceneManager.switchTo("/fxml/comparison-view.fxml");
       } catch (IOException e) {
         e.printStackTrace();
+      }
+    }
+
+    /** added after documentation */
+    private void setUserFocusMode(){
+      Category mode = focusModeComboBox.getValue();
+      if(mode != null){
+        App.wfStrategy.setFocusMode(mode);
       }
     }
 
@@ -239,6 +244,7 @@ public class MainController {
      */
     @FXML
     void handleGenerateSchedule(ActionEvent event) {
+        setUserFocusMode(); /** added after documentation */
         LocalTime availabilityStartTime = LocalTime.of(availabilityStartHrSpinner.getValue(), availabilityStartMinSpinner.getValue());
         LocalTime availabilityEndTime = LocalTime.of(availabilityEndHrSpinner.getValue(), availabilityEndMinSpinner.getValue());
 
