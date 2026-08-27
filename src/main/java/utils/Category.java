@@ -1,26 +1,14 @@
 package utils;
 
+
+/**
+ * The life areas a {@code Task} can belong to. Also doubles as the "focus mode" options in {@code strategies.WeightedFocusStrategy} and the
+ * focus-mode dropdowns in the UI.
+ */
 public enum Category 
 {
-    ACADEMIC{
-        public String getName(){
-            return "academic";
-        }
-    },
-    FAMILY{
-        public String getName(){
-            return "family";
-        }
-    },
-    HEALTH{
-        public String getName(){
-            return "health";
-        }
-    },
-    LEISURE{
-        public String getName(){
-            return "leisure";
-        }
-    }
-    
+    ACADEMIC,
+    FAMILY,
+    HEALTH,
+    LEISURE,
 }
