@@ -23,6 +23,7 @@ import models.ScheduleMetrics;
 import models.ScheduledTask;
 import models.Task;
 import services.Comparison;
+import strategies.SchedulingStrategy;
 import utils.Category;
 import utils.SceneManager;
 
@@ -121,59 +122,36 @@ public class ComparisonController {
 
 
     /**
-     * FXML lifecycle callback. Builds both candidate schedules (Earliest Deadline First and Weighted Focus), compares them via
+     * FXML lifecycle callback. Builds both candidate schedules (using the shared {@code App.edfStrategy} and {@code App.wfStrategy}), compares them via
      * {@code services.Comparison}, and populates the two schedule tables plus the metrics table. Does nothing if there are no tasks to schedule.
      */
     @FXML
     void initialize(){
       ObservableList<String> availableStrategies = FXCollections.observableArrayList();
-      //get tasks
+      /** get tasks */
       List<Task> tasks = App.taskManager.getAllTasks();
 
       // generate schedules
       if (!tasks.isEmpty()){
-        // ==== SET UP FIRST STRATEGY ====
-        App.scheduler.setStrategy(App.edfStrategy);
-        Schedule edfSchedule = App.scheduler.generateSchedule(tasks, null);
-        setUpScheduleTable(edfSchedule.getScheduledTasks(), "A");
+        /** ==== SET UP FIRST STRATEGY ==== */
+        Schedule edfSchedule = generateSchedule(tasks, App.edfStrategy,  "A");
         strategyALabel.setText("Earliest Deadline First Strategy");
-
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
         
-        // ==== SET UP SECOND STRATEGY ===
-        App.scheduler.setStrategy(App.wfStrategy);
-        Schedule wfSchedule = App.scheduler.generateSchedule(tasks, null);
-        setUpScheduleTable(wfSchedule.getScheduledTasks(), "B");
-        focusMode = App.wfStrategy.getFocusMode(); //set focus mode
+        /**  ==== SET UP SECOND STRATEGY === */
+        Schedule wfSchedule = generateSchedule(tasks, App.wfStrategy, "B");
         strategyBLabel.setText("Weighted Focus Strategy");
-
         availableStrategies.add(App.scheduler.getStrategy().getStrategyName());
+        focusMode = App.wfStrategy.getFocusMode(); //set focus mode
 
-        // ===== COMPARING STRATEGIES =====
+        /** ===== COMPARING STRATEGIES ===== */
         Comparison scheduleComparison = new Comparison(edfSchedule, wfSchedule, focusMode);
         ComparisonResult compResults = scheduleComparison.compare();
 
         ScheduleMetrics edfMetrics = compResults.getScheduleAMetrics();
         ScheduleMetrics wfMetrics = compResults.getScheduleBMetrics();
 
-        List<MetricRow> metrics = new ArrayList<>();
-
-        // deadline clashes
-        metrics.add(new MetricRow("Deadline Clashes","Number of tasks whose scheduled finish is after their deadline.","Lower", String.valueOf(edfMetrics.getDeadlineClashes()), String.valueOf(wfMetrics.getDeadlineClashes())));
-
-        // Total lateness
-        metrics.add(new MetricRow("Total Lateness", "Total amount of time deadlines are exceeded.", "Lower", formatMinutes(edfMetrics.getTotalLateness()), formatMinutes(wfMetrics.getTotalLateness())));
-        
-        // Average Slack
-        metrics.add(new MetricRow("Average Slack", "Average deadline minus scheduled finish, including negative values.", "Higher", formatMinutes(Math.round(edfMetrics.getAverageSlack())), formatMinutes(Math.round(wfMetrics.getAverageSlack()))));
-
-        // Weighted Lateness
-        metrics.add(new MetricRow("Weighted Lateness", "Lateness weighted by task importance.", "Lower", String.valueOf(edfMetrics.getWeightedLateness()), String.valueOf(wfMetrics.getWeightedLateness())
-        ));
-
-        // Focus Alignment
-        metrics.add(new MetricRow("Focus Alignment", "Importance-weighted proportion of the first half of prioritised tasks matching the focus mode.", "Higher", String.format("%.1f%%", edfMetrics.getFocusAlignment()), String.format("%.1f%%", wfMetrics.getFocusAlignment())
-        ));
+        List<MetricRow> metrics = createMetricRows(edfMetrics, wfMetrics);
 
         setUpMetricsTable(metrics, "EDF Strategy", "WF Strategy");
 
@@ -182,6 +160,16 @@ public class ComparisonController {
         System.out.println(focusMode.toString());
         focusModeLabel.setText(focusMode.toString());
       }
+    }
+
+    private Schedule generateSchedule(List<Task> tasks, SchedulingStrategy strategy, String scheduleType){
+        App.scheduler.setStrategy(strategy);
+        Schedule schedule = App.scheduler.generateSchedule(tasks, null);
+
+        /** Display schedule */
+        setUpScheduleTable(schedule.getScheduledTasks(), scheduleType.toUpperCase());
+
+        return schedule;
     }
 
 
@@ -237,6 +225,30 @@ public class ComparisonController {
 
           scheduleATable.setItems( FXCollections.observableArrayList(schedule) ); 
         }    
+    }
+
+
+    private List<MetricRow> createMetricRows(ScheduleMetrics scheduleAMetrics, ScheduleMetrics scheduleBMetrics){
+
+        List<MetricRow> metrics = new ArrayList<>();
+
+        /** deadline clashes */
+        metrics.add(new MetricRow("Deadline Clashes","Number of tasks whose scheduled finish is after their deadline.","Lower", String.valueOf(scheduleAMetrics.getDeadlineClashes()), String.valueOf(scheduleBMetrics.getDeadlineClashes())));
+
+        /** Total lateness */
+        metrics.add(new MetricRow("Total Lateness", "Total amount of time deadlines are exceeded.", "Lower", formatMinutes(scheduleAMetrics.getTotalLateness()), formatMinutes(scheduleBMetrics.getTotalLateness())));
+        
+        /** Average Slack */
+        metrics.add(new MetricRow("Average Slack", "Average deadline minus scheduled finish, including negative values.", "Higher", formatMinutes(Math.round(scheduleAMetrics.getAverageSlack())), formatMinutes(Math.round(scheduleBMetrics.getAverageSlack()))));
+
+        /** Weighted Lateness */
+        metrics.add(new MetricRow("Weighted Lateness", "Lateness weighted by task importance.", "Lower", String.valueOf(scheduleAMetrics.getWeightedLateness()), String.valueOf(scheduleBMetrics.getWeightedLateness())
+        ));
+
+        /** Focus Alignment */
+        metrics.add(new MetricRow("Focus Alignment", "Importance-weighted proportion of the first half of prioritised tasks matching the focus mode.", "Higher", String.format("%.1f%%", scheduleAMetrics.getFocusAlignment()), String.format("%.1f%%", scheduleBMetrics.getFocusAlignment())
+        ));
+      return metrics;
     }
 
 
