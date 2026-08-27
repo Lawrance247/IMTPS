@@ -157,7 +157,6 @@ public class ComparisonController {
 
         pickPrefferedStrategy.setItems(availableStrategies);
 
-        System.out.println(focusMode.toString());
         focusModeLabel.setText(focusMode.toString());
       }
     }
@@ -287,7 +286,6 @@ public class ComparisonController {
         }
         else{
           App.scheduler.setStrategy(App.wfStrategy);
-          System.out.println(focusMode.toString());
         }
         MainController controller = SceneManager.switchTo("/fxml/main-view.fxml");
       } catch (IOException e) {
