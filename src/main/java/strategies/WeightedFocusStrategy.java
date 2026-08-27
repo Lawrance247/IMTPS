@@ -9,6 +9,18 @@ import java.util.List;
 import models.Task;
 import utils.Category;
 
+
+/**
+ * Orders tasks by a weighted score combining four factors — focus-category match, importance, urgency, and effort, so that tasks relevant to the
+ * user's chosen {@link #focusMode} tend to rise to the top. Used as "Strategy B" in the comparison view.
+ *
+ * <p>Unlike {@link EarliestDeadlineFirstStrategy}, this strategy holds mutable state ({@link #focusMode}) rather than being purely stateless,
+ * see {@link #setFocusMode(Category)}.</p>
+ *
+ * <p><b>Collaborators:</b> a single shared instance is held by {@code app.App} as {@code App.wfStrategy}; its focus mode is set by
+ * {@code controllers.MainController} (from the focus-mode dropdown) before {@code controllers.ComparisonController} generates a schedule with it;
+ * used by {@code services.Scheduler}.</p>
+ */
 public class WeightedFocusStrategy implements SchedulingStrategy {
 
     // Weight given to each factor in the final score.
@@ -17,16 +29,25 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
     private static final double URGENCY_WEIGHT = 0.20;
     private static final double EFFORT_WEIGHT = 0.10;
 
-    private Category focusMode; // Sinenkhosi changed this to be modifiable
+    private Category focusMode; /** Sinenkhosi changed this to be modifiable */
 
+    /** @param focusMode the category to weight tasks toward */
     public WeightedFocusStrategy(Category focusMode) {
         this.focusMode = focusMode;
     }
 
+
+    /**
+     * Creates the strategy with a default focus mode of {@link Category#ACADEMIC}, to be changed later via {@link #setFocusMode(Category)}.
+     * This is the constructor {@code app.App} uses for its shared {@code wfStrategy} instance, since the actual focus mode isn't known until
+     * the user picks one in the UI.
+     */
     public WeightedFocusStrategy(){
         this.focusMode = Category.ACADEMIC;
     }
 
+
+    /** Sorts tasks by {@link #calculateScore(Task, LocalDateTime)}, highest score first. */
     @Override
     public List<Task> generateSchedule(List<Task> tasks, LocalDateTime referenceTime) {
 
@@ -43,15 +64,15 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
         return schedule;
     }
 
-    /*
-     * Calculate the final weighted score for a task.
-     *
-     * The score considers:
-     * 1. Focus match
-     * 2. Importance
-     * 3. Urgency
-     * 4. Effort
-     */
+    /**
+      * Calculate the final weighted score for a task.
+      *
+      * The score considers:
+      * 1. Focus match
+      * 2. Importance
+      * 3. Urgency
+      * 4. Effort
+      */
     private double calculateScore(Task task, LocalDateTime referenceTime) {
 
         double focusScore = calculateFocusScore(task);
@@ -65,10 +86,7 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
              + (effortScore * EFFORT_WEIGHT);
     }
 
-    /*
-     * A task receives a higher focus score when its category
-     * matches the user's selected focus mode.
-     */
+    /** A task receives a higher focus score when its category matches the user's selected focus mode. */
     private double calculateFocusScore(Task task) {
 
         if (task.getCategory().name().equals(focusMode.name())) {
@@ -78,17 +96,21 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
         return 1;
     }
 
-    /*
-     * Calculate urgency using the amount of time remaining
-     * before the deadline.
-     *
-     * 3 = very urgent
-     * 2 = moderately urgent
-     * 1 = less urgent
-     */
+    /**
+      * Calculate urgency using the amount of time remaining
+      * before the deadline.
+      *
+      * 3 = very urgent
+      * 2 = moderately urgent
+      * 1 = less urgent
+      */
     private double calculateUrgencyScore(Task task, LocalDateTime referenceTime) {
 
-        // LocalDateTime now = referenceTime;
+        /**
+         * Sinenkhosi made a change
+         * LocalDateTime now = referenceTime; --> referenceTime is used for reproducibility (all tasks must be checked against the same now) 
+         * 
+        */
 
         // Overdue tasks receive the highest urgency.
         if (task.getDeadline().isBefore(referenceTime)) {
@@ -108,10 +130,19 @@ public class WeightedFocusStrategy implements SchedulingStrategy {
         }
     }
 
+    /** @return the category tasks are currently being weighted toward. */
     public Category getFocusMode(){
         return this.focusMode;
     }
 
+
+    /**
+     * Changes the focus category. Because {@code App.wfStrategy} is a single shared instance, calling this affects every subsequent read of
+     * {@link #getFocusMode()} and every subsequent {@link #generateSchedule} call on this strategy, from anywhere in the app, there's no
+     * per-caller isolation.
+     *
+     * @param mode the new focus category
+     */
     public void setFocusMode(Category mode){
         this.focusMode = mode;
     }
