@@ -4,7 +4,7 @@ package models;
 /**
  * Immutable pairing of the {@link ScheduleMetrics} produced for "Schedule A" and "Schedule B" in a single strategy comparison.
  *
- * <p>This is the return value of {@code services.Comparison#compare()}. It carries no logic of its own — it exists purely to move both metric sets
+ * <p>This is the return value of {@code services.Comparison#compare()}. It carries no logic of its own, it exists purely to move both metric sets
  * back to the caller ({@code controllers.ComparisonController}) as one object, instead of returning two separate values.</p>
  *
  * <p><b>Collaborators:</b> created by {@code services.Comparison}; consumed by {@code controllers.ComparisonController}, which reads both

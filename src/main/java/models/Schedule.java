@@ -9,7 +9,7 @@ import java.util.List;
  * Represents the complete generated schedule.
  *
  * <p>A {@code Schedule} is an immutable wrapper around a list of {@link ScheduledTask}s produced by {@code services.Scheduler#generateSchedule}.
- * It does not perform any scheduling itself — it is a read-only result object that also exposes a few convenience calculations (deadline
+ * It does not perform any scheduling itself, it is a read-only result object that also exposes a few convenience calculations (deadline
  * clashes, total scheduled time) that are used both by the UI (controllers) and by {@code services.Comparison} when computing {@link
  * ScheduleMetrics}.</p>
  *
@@ -22,15 +22,20 @@ public class Schedule {
    * Stores the list of scheduled tasks
    */
   private final List<ScheduledTask> scheduledTasks;
+
+  /** Cached result of {@link #searchForDeadlineClashes()}, computed once at construction. */
   private final List<ScheduledTask> scheduleClashes;
+
+  /** Cached result of {@link #calculateTotalScheduledMinutes()}, computed once at construction. */
   private final long totalScheduledMinutes;
 
 
   /**
    * Creates a schedule from an already-ordered list of scheduled tasks.
    *
-   * <p>The incoming list is defensively copied and wrapped as unmodifiable, so {@code Schedule} instances are effectively immutable once built —
-   * callers cannot mutate the schedule after the fact, and mutating the original list passed in has no effect on this schedule.</p>
+   * <p>The incoming list is defensively copied and wrapped as unmodifiable, so {@code Schedule} instances are effectively immutable once built,
+   * callers cannot mutate the schedule after the fact, and mutating the original list passed in has no effect on this schedule. Deadline
+   * clashes and total scheduled minutes are computed immediately so later getter calls are simple field reads.</p>
    *
    * @param scheduledTasks The list of scheduled tasks.
    *
@@ -53,7 +58,7 @@ public class Schedule {
 
 
   /**
-   * @return all tasks that finish after their deadlines.
+   * @return all tasks that finish after their deadlines (cached — see {@link #scheduleClashes}).
    */
   public List<ScheduledTask> getDeadlineClashes() {
     return scheduleClashes;
@@ -61,8 +66,9 @@ public class Schedule {
 
 
   /**
-   * Searches for all tasks that finish after their deadlines.
-   * 
+   * Searches for all tasks that finish after their deadlines. Called once,
+   * from the constructor, to populate {@link #scheduleClashes}.
+   *
    * @ return all found clashes.
    */
   private List<ScheduledTask> searchForDeadlineClashes(){
@@ -98,7 +104,8 @@ public class Schedule {
 
 
   /**
-   * Calculates total duration of work scheduled.
+   * Calculates total duration of work scheduled. Called once, from the
+   * constructor, to populate {@link #totalScheduledMinutes}.
    *
    * @return the sum, in minutes, of every scheduled task's duration.
    */
