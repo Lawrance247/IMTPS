@@ -34,8 +34,8 @@ import utils.SceneManager;
  *
  * <p><b>Collaborators:</b> reads/writes tasks through the static {@code App.taskManager} ({@code services.TaskManager}); generates the
  * displayed schedule through the static {@code App.scheduler} ({@code services.Scheduler}); navigates to {@link TaskFormController}
- * (add/edit) and {@link ComparisonController} (compare strategies) via {@code utils.SceneManager}. Table rows are backed by {@link ScheduledTask}
- * (and, transitively, {@link Task}).</p>
+ * (add/edit) and {@link ComparisonController} (compare strategies) via {@code utils.SceneManager}; seeds demo data via
+ * {@code repositories.InitializeTasks} on first run. Table rows are backed by {@link ScheduledTask} (and, transitively, {@link Task}).</p>
  */
 public class MainController {
 
@@ -102,11 +102,11 @@ public class MainController {
      */
     @FXML
     void initialize() {
-      //Populate focusModeComboBox
+      /** Populate focusModeComboBox */
       ObservableList<Category> modes = FXCollections.observableArrayList(Category.ACADEMIC, Category.FAMILY, Category.LEISURE, Category.HEALTH);
       focusModeComboBox.setItems(modes);
 
-      // Availability time spinners -> allows the user to select availability time.
+      /** Availability time spinners -> allows the user to select availability time. */
       setSpinner(availabilityStartHrSpinner, availabilityStartMinSpinner, 0, 23, 0, 59);
       setSpinner(availabilityEndHrSpinner, availabilityEndMinSpinner, 0, 23, 0, 59);
 
@@ -203,8 +203,9 @@ public class MainController {
 
 
     /**
-     * "Compare Strategies" button handler. Switches to the comparison view and, if a focus mode is selected, passes it through via
-     * {@link ComparisonController#setFocusMode(Category)}.
+     * "Compare Strategies" button handler. If a focus mode is selected, applies it to the shared {@code App.wfStrategy} instance before switching views,
+     * so that {@code ComparisonController.initialize()}, which runs synchronously as part of the {@code SceneManager.switchTo} call below, already sees
+     * the chosen focus mode when it generates the Strategy B schedule.
      */
     @FXML
     void handleCompareStrategies(ActionEvent event) {
@@ -222,7 +223,7 @@ public class MainController {
 
     /**
      * "Delete" button handler. Removes {@link #activeSelectedTask} from {@code App.taskManager} and refreshes the schedule. No-op if nothing
-     * is selected (button is disabled in that case, but this guards defensively too).
+     * is selected.
      */
     @FXML
     void handleDeleteTask(ActionEvent event) {
