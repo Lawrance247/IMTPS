@@ -9,7 +9,17 @@ import utils.Weights;  // Universal Unique Id (128 bit values, type String): exm
 
 
 
-
+/**
+ * A single to-do item as entered by the user, before any scheduling happens.
+ *
+ * <p>{@code Task} is the app's core mutable domain object — everything else (schedules, comparisons, metrics) is derived from a list of these. It
+ * carries its own identity ({@link #id}, generated once at construction and never changed) plus the fields the scheduling strategies read: deadline,
+ * duration, {@link Category}, and the two independent {@link Weights} dimensions {@link #importance} and {@link #effort}.</p>
+ *
+ * <p><b>Collaborators:</b> created and mutated by {@code services.TaskManager} (on behalf of {@code controllers.TaskFormController}); stored by
+ * {@code repositories.TaskDB}; read by {@code strategies.EarliestDeadlineFirstStrategy} and {@code strategies.WeightedFocusStrategy} to decide
+ * ordering; wrapped by {@link ScheduledTask} once the scheduler assigns it a time slot.</p>
+ */
 public class Task 
 {
    private final String id;
@@ -22,6 +32,19 @@ public class Task
     private TaskStatus status;
     private Weights importance;
 
+
+    /**
+     * Creates a new task with a freshly generated {@link #id} and
+     * {@link TaskStatus#TO_DO} status.
+     *
+     * @param title           short display name
+     * @param description     longer free-text description
+     * @param category        which {@link Category} this task belongs to
+     * @param deadline        when the task must be finished by
+     * @param durationMinutes how long the task is expected to take
+     * @param importance      how important the task is (independent of effort)
+     * @param effort          how much effort the task takes (independent of importance)
+     */
     public Task(String title, String description, Category category,
                 LocalDateTime deadline, int durationMinutes,
                 Weights importance, Weights effort)
@@ -38,10 +61,22 @@ public class Task
         this.status = TaskStatus.TO_DO; // new task defaults to TO_DO
     }
 
+
+    /**
+     * @return {@code true} if the task isn't marked {@link TaskStatus#DONE}
+     *         and its deadline has already passed (compared against the
+     *         current system time).
+     */
     public boolean isOverdue()
     {
         return (status != TaskStatus.DONE && deadline.isBefore(LocalDateTime.now()));
     }
+
+
+    /**
+     * @return the time remaining until {@link #deadline}, measured from now.
+     *         Negative if the deadline has already passed.
+     */
     public Duration timeUntilDeadline()
     {
         return Duration.between(LocalDateTime.now(), deadline);
