@@ -23,6 +23,8 @@ public class Scheduler {
      * @param strategy        strategy used to prioritise tasks
      * @param dailyStartTime  time at which scheduling starts each day
      * @param dailyEndTime    time at which scheduling ends each day
+     * @throws IllegalArgumentException if {@code strategy} is null, either
+     *         time is null, or {@code dailyStartTime} is not before {@code dailyEndTime}
      */
     public Scheduler(SchedulingStrategy strategy, LocalTime dailyStartTime, LocalTime dailyEndTime) {
 
@@ -43,6 +45,13 @@ public class Scheduler {
         this.dailyEndTime = dailyEndTime;
     }
 
+
+    /**
+     * Swaps the active strategy, the next call to {@link #generateSchedule}
+     * will use it.
+     *
+     * @throws IllegalArgumentException if {@code strategy} is null
+     */
     public void setStrategy(SchedulingStrategy strategy){
         if (strategy == null) {
             throw new IllegalArgumentException("Scheduling strategy cannot be null.");
@@ -51,29 +60,37 @@ public class Scheduler {
         this.strategy = strategy;
     }
 
+
+    /** @return the strategy currently in use. */
     public SchedulingStrategy getStrategy(){
         return this.strategy;
     }
 
+
+    /** Sets the daily availability window used by {@link #generateSchedule}. */
     public void setAvailability(LocalTime start, LocalTime end){
         this.dailyStartTime = start;
         this.dailyEndTime = end;
     }
 
+
+    /** @return the current daily scheduling start time. */
     public LocalTime getAvailabilityStartTime(){
         return this.dailyStartTime;
     }
+
+    /** @return the current daily scheduling end time. */
     public LocalTime getAvailabilityEndTime(){
         return this.dailyEndTime;
     }
 
     /**
-     * Generates a complete time-based schedule.
-     * Tasks are NOT removed when they cause problems.
-     * Instead, the generated schedule records those problems
-     * so that they can later be reported and compared.
+     * Generates a complete time-based schedule. Tasks are NOT removed when they cause problems. Instead, the generated schedule records those
+     * problems so that they can later be reported and compared.
+     * 
      *@param tasks tasks to schedule
-     *@param schedulingStart The time to start scheduling at.
+     *@param schedulingStart The time to start scheduling at. If {@code null},
+     *                       defaults to tomorrow at {@link #dailyStartTime}.
      *
      */
     public Schedule generateSchedule(List<Task> tasks, LocalDateTime schedulingStart) {
@@ -87,17 +104,17 @@ public class Scheduler {
             schedulingStart = LocalDateTime.of(LocalDate.now(), this.dailyStartTime).plusDays(1);
         }
 
-        // The strategy determines the priority/order.
+        /** The strategy determines the priority/order. */
         List<Task> prioritisedTasks = strategy.generateSchedule(new ArrayList<>(tasks), schedulingStart);
 
         List<ScheduledTask> scheduledTasks = new ArrayList<>();
 
-        // First available point from which to schedule.
+        /** First available point from which to schedule. */
         LocalDateTime nextAvailableTime = moveToNextAvailableTime(schedulingStart);
 
-        // The scheduler assigns every task a start and end time..
+        /** The scheduler assigns every task a start and end time. */
         for (Task task : prioritisedTasks) {
-            // Find the next available scheduling position.
+            /** Find the next available scheduling position. */
             LocalDateTime taskStart = findNextSchedulingTime(nextAvailableTime, task.getDurationMinutes());
 
             LocalDateTime taskEnd = taskStart.plusMinutes(task.getDurationMinutes());
@@ -107,7 +124,7 @@ public class Scheduler {
             scheduledTasks.add(scheduledTask);
 
             
-            //The next task begins after this task.
+            /** The next task begins after this task. */
             nextAvailableTime = taskEnd;
         }
 
@@ -115,9 +132,9 @@ public class Scheduler {
     }
 
     /**
-     * Finds the next position where a task can be placed.
-     * If there is not enough time remaining today, the task is moved to the next day's availability window.
-     * A task is never rejected.
+     * Finds the next position where a task can be placed. If there is not enough time remaining today, the task is moved to the next
+     * day's availability window. A task is never rejected.
+     * 
      *@param startingPoint task start time.
      *@param durationMinutes task's duration.
      * 
@@ -128,10 +145,10 @@ public class Scheduler {
 
         long dailyAvailableMinutes = Duration.between(dailyStartTime, dailyEndTime).toMinutes();
 
-        /*
-         * If a task is longer than the whole daily window, we still schedule it.
-         * It will automatically be reported as problematic because it extends outside the normal availabilitywindow.
-         */
+        /**
+          * If a task is longer than the whole daily window, we still schedule it. It will automatically be reported as problematic because
+          * it extends outside the normal availabilitywindow.
+          */
         if (durationMinutes > dailyAvailableMinutes) {
             return candidate;
         }
@@ -141,7 +158,7 @@ public class Scheduler {
 
             LocalDateTime taskEnd = candidate.plusMinutes(durationMinutes);
 
-            //Task fits into today's available window.
+            /** Task fits into today's available window. */
             if (!taskEnd.isAfter(dayEnd)) {
                 return candidate;
             }
@@ -155,6 +172,7 @@ public class Scheduler {
 
     /**
      * Ensures that the given time is inside the daily scheduling window.
+     * 
      * @param dateTime The date and time to be check.
      */
     private LocalDateTime moveToNextAvailableTime(LocalDateTime dateTime) {
@@ -162,21 +180,17 @@ public class Scheduler {
 
         LocalTime time = dateTime.toLocalTime();
 
-        //Before today's availability.
+        /** Before today's availability. */
         if (time.isBefore(dailyStartTime)) {
             return LocalDateTime.of(date, dailyStartTime);
         }
 
-        /*
-            * At or after today's availability has ended.
-            */
+        /** At or after today's availability has ended. */
         if (!time.isBefore(dailyEndTime)) {
             return LocalDateTime.of(date.plusDays(1), dailyStartTime);
         }
 
-        /*
-            * Already inside the window.
-            */
+        /** Already inside the window. */
         return dateTime;
     }
 }
