@@ -8,18 +8,23 @@ import models.Task;
 import utils.Category;
 import utils.Weights;
 
+
+
+/**
+ * Seeds {@code App.taskManager} with a fixed set of demo tasks.
+ *
+ * <p><b>Collaborators:</b> called once by {@code controllers.MainController.initialize()} on first run (when there are no existing tasks);
+ * writes through {@code App.taskManager}.</p>
+ */
 public class InitializeTasks {
 
 
   /**
    * Temporary method for testing otherwise user adds tasks via addtask.
    *
-   * <p>Populates {@code App.taskManager} with a fixed set of demo tasks
-   * spanning all four {@link Category} values, used only when the task
-   * manager is empty on startup (see {@link #initialize()}). This is seed
-   * data for development/demo purposes, not part of the app's normal
-   * runtime behaviour — see refactor notes for a suggestion on where this
-   * responsibility should live instead of the controller.</p>
+   * <p>Populates {@code App.taskManager} with a fixed set of demo tasks spanning all four {@link Category} values, used only when the task
+   * manager is empty on startup (see {@code MainController#initialize()}). This is seed data for development/demo purposes, not part of the app's
+   * normal runtime behaviour.</p>
    *
    * @return the full list of tasks after seeding (via {@code App.taskManager.getAllTasks()})
    */
