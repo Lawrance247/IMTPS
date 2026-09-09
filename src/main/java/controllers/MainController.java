@@ -117,6 +117,7 @@ public class MainController {
       }
 
       setUpSchedule(allTasks);
+      
       taskTable.getSelectionModel().selectedItemProperty().addListener((observable, oldTask, selectedTask) -> {
         if (selectedTask != null) {
           activeSelectedTask = selectedTask.getTask();

@@ -38,7 +38,7 @@ public class App extends Application {
     public final static WeightedFocusStrategy wfStrategy = new WeightedFocusStrategy();
 
      /** Shared scheduler, starting out on {@link #edfStrategy} with an 08:00–18:00 daily availability window. */
-    public final static Scheduler scheduler = new Scheduler(edfStrategy , LocalTime.of(8, 0), LocalTime.of(18, 0));
+    public final static Scheduler scheduler = new Scheduler(edfStrategy, LocalTime.of(8, 0), LocalTime.of(18, 0));
 
 
     /**

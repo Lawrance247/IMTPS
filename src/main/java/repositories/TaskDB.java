@@ -26,7 +26,9 @@ public class TaskDB
     // HashMaps are quiker for lookups than lists; no need to scan the list so lookups are O(1) time
     private final Map<String, Task> tasks = new HashMap<>();
 
-
+    public TaskDB() {
+        DatabaseConnection.initializeDatabase();
+    }
     /**
      * Stores a new task.
      *
