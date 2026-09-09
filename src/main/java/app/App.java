@@ -1,4 +1,5 @@
 package app;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import javafx.application.Application;
@@ -10,6 +11,8 @@ import strategies.EarliestDeadlineFirstStrategy;
 import strategies.WeightedFocusStrategy;
 import utils.SceneManager;
 
+import utils.Category;
+import utils.Weights;
 
 /**
  * JavaFX application entry point.
@@ -56,6 +59,15 @@ public class App extends Application {
      */
     @Override
     public void start(Stage stage) throws Exception {
+            App.taskManager.createTask(
+                    "Database Test Task",
+                    "Testing SQLite persistence",
+                    Category.ACADEMIC,
+                    LocalDateTime.now().plusDays(2),
+                    60,
+                    Weights.HIGH,
+                    Weights.MEDIUM
+            );
 //        stage.initStyle(StageStyle.UNDECORATED); // --> this removes the exit bar
 //        stage.initStyle(StageStyle.TRANSPARENT);
         SceneManager.setStage(stage);
@@ -64,4 +76,5 @@ public class App extends Application {
         //stage.setResizable(false);
         stage.show();
     }
+
 }

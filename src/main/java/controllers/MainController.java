@@ -112,9 +112,9 @@ public class MainController {
 
       List<Task> allTasks = App.taskManager.getAllTasks();
 
-      if(allTasks.isEmpty()){
+      /*if(allTasks.isEmpty()){
         allTasks = InitializeTasks.createTasks(); //for testing purposes
-      }
+      }*/
 
       setUpSchedule(allTasks);
       

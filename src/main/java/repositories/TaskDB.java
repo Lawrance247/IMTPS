@@ -1,6 +1,9 @@
 // Sisa (comments are for me not to forget design choices)
 package repositories;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,9 +11,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import models.Task;
-
-
-
 /**
  * In-memory storage for {@link Task}s, keyed by task ID.
  *
@@ -34,7 +34,7 @@ public class TaskDB
      *
      * @param task the task to store
      * @throws IllegalArgumentException if a task with the same ID is already stored
-     */
+     
     public void add(Task task) 
     {
         if (tasks.containsKey(task.getId())) 
@@ -42,9 +42,50 @@ public class TaskDB
             throw new IllegalArgumentException("Task with id " + task.getId() + " already exists");
         }
         tasks.put(task.getId(), task);
+    }*/
+
+    /**
+     * Adds a task to the SQLite database.
+     *
+     * A PreparedStatement is used to safely insert the task values
+     * into the database.
+     *
+     * @param task the task to be saved
+     */
+    public void add(Task task) {
+
+        String sql =
+                "INSERT INTO tasks " +
+                "(id, title, description, category, deadline, " +
+                "duration_minutes, importance, effort, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (
+            Connection connection = DatabaseConnection.getConnection();
+            PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+
+            // Convert the Task object's values into values SQLite can store.
+            statement.setString(1, task.getId());
+            statement.setString(2, task.getTitle());
+            statement.setString(3, task.getDescription());
+            statement.setString(4, task.getCategory().name());
+            statement.setString(5, task.getDeadline().toString());
+            statement.setInt(6, task.getDurationMinutes());
+            statement.setString(7, task.getImportance().name());
+            statement.setString(8, task.getEffort().name());
+            statement.setString(9, task.getStatus().name());
+
+            // Execute the INSERT statement.
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Could not save task to database.",
+                    e
+            );
+        }
     }
-
-
 
     /**
      * Removes the task with the given ID.
