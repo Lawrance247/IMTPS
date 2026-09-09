@@ -59,17 +59,7 @@ public class App extends Application {
      */
     @Override
     public void start(Stage stage) throws Exception {
-            App.taskManager.createTask(
-                    "Database Test Task",
-                    "Testing SQLite persistence",
-                    Category.ACADEMIC,
-                    LocalDateTime.now().plusDays(2),
-                    60,
-                    Weights.HIGH,
-                    Weights.MEDIUM
-            );
-//        stage.initStyle(StageStyle.UNDECORATED); // --> this removes the exit bar
-//        stage.initStyle(StageStyle.TRANSPARENT);
+
         SceneManager.setStage(stage);
         SceneManager.switchTo("/fxml/main-view.fxml");
 

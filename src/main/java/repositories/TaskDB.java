@@ -10,6 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import java.sql.ResultSet;
+
+import utils.Category;
+import utils.TaskStatus;
+import utils.Weights;
+
+import java.time.LocalDateTime;
+
 import models.Task;
 /**
  * In-memory storage for {@link Task}s, keyed by task ID.
@@ -134,18 +142,78 @@ public class TaskDB
         return tasks.get(id);
     }
 
-
-    
-    
     /**
-     * @return a new, independent list containing every stored task. Mutating
-     *         the returned list does not affect this {@code TaskDB} — callers
-     *         must go through {@link #add}/{@link #remove}/{@link #update} to
-     *         change what's stored.
+     * Retrieves all tasks stored in the SQLite database.
+     *
+     * Each database row is converted back into a Task object.
+     *
+     * @return a list containing all stored tasks
      */
-    public List<Task> findAll() 
-    {
-        /** returns an ArayList, this is so that the person calling findAll gets a coppy and any changes dont affect TaskDB directly; removals handled by task manager */
-        return new ArrayList<>(tasks.values());
+    public List<Task> findAll() {
+
+        List<Task> tasks = new ArrayList<>();
+
+        String sql = "SELECT * FROM tasks";
+
+        try (
+            Connection connection = DatabaseConnection.getConnection();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet resultSet = statement.executeQuery()
+        ) {
+
+            while (resultSet.next()) {
+
+                // Convert the database values back into Java types.
+                String id = resultSet.getString("id");
+                String title = resultSet.getString("title");
+                String description = resultSet.getString("description");
+
+                Category category = Category.valueOf(
+                        resultSet.getString("category")
+                );
+
+                LocalDateTime deadline = LocalDateTime.parse(
+                        resultSet.getString("deadline")
+                );
+
+                int durationMinutes =
+                        resultSet.getInt("duration_minutes");
+
+                Weights importance = Weights.valueOf(
+                        resultSet.getString("importance")
+                );
+
+                Weights effort = Weights.valueOf(
+                        resultSet.getString("effort")
+                );
+
+                TaskStatus status = TaskStatus.valueOf(
+                        resultSet.getString("status")
+                );
+
+                // Rebuild the Task using its existing database ID.
+                Task task = new Task(
+                        id,
+                        title,
+                        description,
+                        category,
+                        deadline,
+                        durationMinutes,
+                        importance,
+                        effort,
+                        status
+                );
+
+                tasks.add(task);
+            }
+
+            return tasks;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Could not retrieve tasks from database.",
+                    e
+            );
+        }
     }
 }

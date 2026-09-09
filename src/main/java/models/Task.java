@@ -61,7 +61,32 @@ public class Task
         this.status = TaskStatus.TO_DO; // new task defaults to TO_DO
     }
 
-
+    /**
+     * Creates a Task from data that already exists in the database.
+     * The existing ID and status are preserved instead of generating
+     * a new ID.
+     */
+    public Task(
+            String id,
+            String title,
+            String description,
+            Category category,
+            LocalDateTime deadline,
+            int durationMinutes,
+            Weights importance,
+            Weights effort,
+            TaskStatus status
+    ) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.category = category;
+        this.deadline = deadline;
+        this.durationMinutes = durationMinutes;
+        this.importance = importance;
+        this.effort = effort;
+        this.status = status;
+    }
     /**
      * @return {@code true} if the task isn't marked {@link TaskStatus#DONE}
      *         and its deadline has already passed (compared against the
