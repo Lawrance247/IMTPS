@@ -1,18 +1,15 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import AppShell from "./components/layout/AppShell";
+import FocusPage from "./pages/FocusPage";
+import InsightsPage from "./pages/InsightsPage";
 import LoginPage from "./pages/LoginPage";
+import NotesPage from "./pages/NotesPage";
 import RegisterPage from "./pages/RegisterPage";
+import SchedulePage from "./pages/SchedulePage";
+import SettingsPage from "./pages/SettingsPage";
+import TasksPage from "./pages/TasksPage";
+import TodayPage from "./pages/TodayPage";
 import WelcomePage from "./pages/WelcomePage";
-
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <main className="page">
-      <div className="page-content">
-        <h1>{title}</h1>
-        <p>This screen is being built next.</p>
-      </div>
-    </main>
-  );
-}
 
 export default function App() {
   return (
@@ -20,7 +17,17 @@ export default function App() {
       <Route path="/" element={<WelcomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/today" element={<ComingSoon title="Today" />} />
+
+      <Route element={<AppShell />}>
+        <Route path="/today" element={<TodayPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/focus" element={<FocusPage />} />
+        <Route path="/notes" element={<NotesPage />} />
+        <Route path="/insights" element={<InsightsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
