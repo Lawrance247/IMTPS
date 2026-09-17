@@ -1,12 +1,13 @@
 import {
   Lightbulb,
-  MoreHorizontal,
+  Pencil,
+  Trash2,
   Plus,
   Search,
   StickyNote,
   X,
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import "./NotesPage.css";
 
 type Note = {
@@ -17,41 +18,53 @@ type Note = {
   date: string;
 };
 
-const initialNotes: Note[] = [
-  {
-    id: 1,
-    title: "Database ideas",
-    body: "Test SQLite CRUD and make sure task updates are reflected in the schedule.",
-    tag: "Project",
-    date: "16 Sep 2026",
-  },
-  {
-    id: 2,
-    title: "Presentation reminder",
-    body: "Keep the strategy explanation simple: what goes in, how it prioritises, what comes out.",
-    tag: "Reminder",
-    date: "15 Sep 2026",
-  },
-  {
-    id: 3,
-    title: "INF3011F project",
-    body: "Connect the React interface to the existing Java task and scheduling logic.",
-    tag: "Academic",
-    date: "14 Sep 2026",
-  },
-  {
-    id: 4,
-    title: "Weekend",
-    body: "Call home and make time to rest after finishing the week's work.",
-    tag: "Personal",
-    date: "13 Sep 2026",
-  },
-];
+const STORAGE_KEY = "imtps.notes";
+
+function loadNotes(): Note[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+function todayLabel() {
+  return new Date().toLocaleDateString("en-ZA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState(initialNotes);
+  const [notes, setNotes] = useState<Note[]>(loadNotes);
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  }, [notes]);
+
+  function deleteNote(id: number) {
+    setNotes((current) => current.filter((note) => note.id !== id));
+  }
+
+  function openNewNote() {
+    setEditingNote(null);
+    setShowForm(true);
+  }
+
+  function openEditNote(note: Note) {
+    setEditingNote(note);
+    setShowForm(true);
+  }
+
+  function closeForm() {
+    setEditingNote(null);
+    setShowForm(false);
+  }
 
   const filteredNotes = useMemo(
     () =>
@@ -63,7 +76,7 @@ export default function NotesPage() {
     [notes, query],
   );
 
-  function addNote(event: FormEvent<HTMLFormElement>) {
+  function saveNote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const title = String(form.get("title") ?? "").trim();
@@ -72,18 +85,28 @@ export default function NotesPage() {
 
     if (!title || !body) return;
 
-    setNotes((current) => [
-      {
-        id: Date.now(),
-        title,
-        body,
-        tag,
-        date: "17 Sep 2026",
-      },
-      ...current,
-    ]);
+    if (editingNote) {
+      setNotes((current) =>
+        current.map((note) =>
+          note.id === editingNote.id
+            ? { ...note, title, body, tag }
+            : note,
+        ),
+      );
+    } else {
+      setNotes((current) => [
+        {
+          id: Date.now(),
+          title,
+          body,
+          tag,
+          date: todayLabel(),
+        },
+        ...current,
+      ]);
+    }
 
-    setShowForm(false);
+    closeForm();
   }
 
   return (
@@ -95,7 +118,7 @@ export default function NotesPage() {
           <p>Keep quick thoughts, reminders and ideas close to your plan.</p>
         </div>
 
-        <button className="new-note-button" onClick={() => setShowForm(true)}>
+        <button className="new-note-button" onClick={openNewNote}>
           <Plus size={18} />
           New Note
         </button>
@@ -124,9 +147,24 @@ export default function NotesPage() {
               <span className={`note-tag ${note.tag.toLowerCase()}`}>
                 {note.tag}
               </span>
-              <button aria-label={`Options for ${note.title}`}>
-                <MoreHorizontal size={18} />
-              </button>
+              <div className="note-card-actions">
+                <button
+                  type="button"
+                  aria-label={`Edit ${note.title}`}
+                  title="Edit note"
+                  onClick={() => openEditNote(note)}
+                >
+                  <Pencil size={17} />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete ${note.title}`}
+                  title="Delete note"
+                  onClick={() => deleteNote(note.id)}
+                >
+                  <Trash2 size={17} />
+                </button>
+              </div>
             </div>
 
             <h2>{note.title}</h2>
@@ -138,7 +176,7 @@ export default function NotesPage() {
           </article>
         ))}
 
-        <button className="note-add-card" onClick={() => setShowForm(true)}>
+        <button className="note-add-card" onClick={openNewNote}>
           <span><Plus size={22} /></span>
           <strong>Add a note</strong>
           <small>Write down anything on your mind.</small>
@@ -148,8 +186,12 @@ export default function NotesPage() {
       {filteredNotes.length === 0 && (
         <div className="notes-empty">
           <Search size={28} />
-          <h3>No matching notes</h3>
-          <p>Try a different search.</p>
+          <h3>{notes.length === 0 ? "No notes yet" : "No matching notes"}</h3>
+          <p>
+            {notes.length === 0
+              ? "Create your first note using the New Note button."
+              : "Try a different search."}
+          </p>
         </div>
       )}
 
@@ -165,22 +207,22 @@ export default function NotesPage() {
       </aside>
 
       {showForm && (
-        <div className="note-modal-backdrop" onMouseDown={() => setShowForm(false)}>
+        <div className="note-modal-backdrop" onMouseDown={closeForm}>
           <div className="note-modal" onMouseDown={(event) => event.stopPropagation()}>
             <div className="note-modal-heading">
               <div>
                 <span>Quick capture</span>
-                <h2>New note</h2>
+                <h2>{editingNote ? "Edit note" : "New note"}</h2>
               </div>
-              <button onClick={() => setShowForm(false)} aria-label="Close">
+              <button onClick={closeForm} aria-label="Close">
                 <X size={19} />
               </button>
             </div>
 
-            <form onSubmit={addNote} className="note-form">
+            <form onSubmit={saveNote} className="note-form">
               <label>
                 <span>Title</span>
-                <input name="title" placeholder="What's this about?" autoFocus required />
+                <input name="title" defaultValue={editingNote?.title ?? ""} placeholder="What\'s this about?" autoFocus required />
               </label>
 
               <label>
@@ -188,6 +230,7 @@ export default function NotesPage() {
                 <textarea
                   name="body"
                   rows={6}
+                  defaultValue={editingNote?.body ?? ""}
                   placeholder="Write anything on your mind..."
                   required
                 />
@@ -195,7 +238,7 @@ export default function NotesPage() {
 
               <label>
                 <span>Tag</span>
-                <select name="tag" defaultValue="General">
+                <select name="tag" defaultValue={editingNote?.tag ?? "General"}>
                   <option>General</option>
                   <option>Academic</option>
                   <option>Project</option>
@@ -205,10 +248,10 @@ export default function NotesPage() {
               </label>
 
               <div className="note-form-actions">
-                <button type="button" onClick={() => setShowForm(false)}>
+                <button type="button" onClick={closeForm}>
                   Cancel
                 </button>
-                <button type="submit">Save Note</button>
+                <button type="submit">{editingNote ? "Save Changes" : "Save Note"}</button>
               </div>
             </form>
           </div>
