@@ -3,91 +3,76 @@ import {
   ChevronDown,
   CirclePlus,
   Clock3,
-  MoreHorizontal,
+  Trash2,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import AddTaskModal from "../components/tasks/AddTaskModal";
 import "./TasksPage.css";
 
 type Category = "Academic" | "Family" | "Health" | "Leisure";
 type Status = "To Do" | "In Progress" | "Completed";
+type Weight = "High" | "Medium" | "Low";
 
 type Task = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   category: Category;
   deadline: string;
   time: string;
   duration: number;
-  importance: "High" | "Medium" | "Low";
-  effort: "High" | "Medium" | "Low";
+  importance: Weight;
+  effort: Weight;
   status: Status;
 };
 
-const initialTasks: Task[] = [
-  {
-    id: 1,
-    title: "Study CSC3003S",
-    description: "Prepare for TOA practice and review lecture notes.",
-    category: "Academic",
-    deadline: "19 Sep",
-    time: "10:00",
-    duration: 90,
-    importance: "High",
-    effort: "High",
-    status: "In Progress",
-  },
-  {
-    id: 2,
-    title: "Call my parents",
-    description: "Catch up with family before the weekend.",
-    category: "Family",
-    deadline: "20 Sep",
-    time: "18:30",
-    duration: 30,
-    importance: "Medium",
-    effort: "Low",
-    status: "To Do",
-  },
-  {
-    id: 3,
-    title: "Go to gym",
-    description: "Lower-body workout and stretching.",
-    category: "Health",
-    deadline: "20 Sep",
-    time: "16:00",
-    duration: 60,
-    importance: "Medium",
-    effort: "Medium",
-    status: "To Do",
-  },
-  {
-    id: 4,
-    title: "INF3011F project work",
-    description: "Continue implementation and database integration.",
-    category: "Academic",
-    deadline: "21 Sep",
-    time: "14:00",
-    duration: 120,
-    importance: "High",
-    effort: "High",
-    status: "To Do",
-  },
-  {
-    id: 5,
-    title: "Play video games",
-    description: "Take some time to recharge after studying.",
-    category: "Leisure",
-    deadline: "21 Sep",
-    time: "20:00",
-    duration: 60,
-    importance: "Low",
-    effort: "Low",
-    status: "To Do",
-  },
-];
+type ApiTask = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  deadline: string;
+  durationMinutes: number;
+  importance: string;
+  effort: string;
+  status: string;
+};
+
+const API_URL = "http://localhost:8080/api/tasks";
+
+function titleCase(value: string) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function fromApiTask(task: ApiTask): Task {
+  // The database contains some older test dates, so support both formats.
+  const normalisedDeadline = task.deadline.replace(/\//g, "-").replace(" ", "T");
+  const [date = task.deadline, time = ""] = normalisedDeadline.split("T");
+
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description ?? "",
+    category: titleCase(task.category) as Category,
+    deadline: date,
+    time: time.slice(0, 5),
+    duration: task.durationMinutes,
+    importance: titleCase(task.importance) as Weight,
+    effort: titleCase(task.effort) as Weight,
+    status:
+      task.status === "DONE"
+        ? "Completed"
+        : task.status === "IN_PROGRESS"
+          ? "In Progress"
+          : "To Do",
+  };
+}
 
 const categories: Array<"All" | Category> = [
   "All",
@@ -98,11 +83,36 @@ const categories: Array<"All" | Category> = [
 ];
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"All" | Category>("All");
   const [status, setStatus] = useState<"All" | Status>("All");
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  async function loadTasks() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(API_URL);
+      if (!response.ok) {
+        throw new Error("Could not load tasks");
+      }
+
+      const data: ApiTask[] = await response.json();
+      setTasks(data.map(fromApiTask));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load tasks");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -115,17 +125,53 @@ export default function TasksPage() {
     });
   }, [tasks, query, category, status]);
 
-  function toggleComplete(id: number) {
-    setTasks((current) =>
-      current.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              status: task.status === "Completed" ? "To Do" : "Completed",
-            }
-          : task,
-      ),
-    );
+  async function toggleComplete(task: Task) {
+    const newStatus: Status =
+      task.status === "Completed" ? "To Do" : "Completed";
+
+    try {
+      setError("");
+
+      const response = await fetch(`${API_URL}/${task.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: task.title,
+          description: task.description,
+          category: task.category.toUpperCase(),
+          deadline: `${task.deadline}T${task.time || "00:00"}:00`,
+          durationMinutes: task.duration,
+          importance: task.importance.toUpperCase(),
+          effort: task.effort.toUpperCase(),
+          status: newStatus === "Completed" ? "DONE" : "TO_DO",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not update task");
+      }
+
+      const updated: ApiTask = await response.json();
+      setTasks((current) =>
+        current.map((item) =>
+          item.id === task.id ? fromApiTask(updated) : item,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update task");
+    }
+  }
+
+
+  async function deleteTask(task: Task) {
+    try {
+      setError("");
+      const response = await fetch(`${API_URL}/${task.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Could not delete task");
+      setTasks((current) => current.filter((item) => item.id !== task.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete task");
+    }
   }
 
   return (
@@ -183,6 +229,9 @@ export default function TasksPage() {
         ))}
       </div>
 
+      {error && <div className="tasks-empty"><p>{error}</p></div>}
+      {loading && <div className="tasks-empty"><p>Loading tasks...</p></div>}
+
       <section className="task-list">
         <div className="task-list-heading">
           <span>{filteredTasks.length} tasks</span>
@@ -198,7 +247,7 @@ export default function TasksPage() {
           >
             <button
               className="task-check"
-              onClick={() => toggleComplete(task.id)}
+              onClick={() => toggleComplete(task)}
               aria-label={`Mark ${task.title} as completed`}
             >
               {task.status === "Completed" && "✓"}
@@ -239,8 +288,13 @@ export default function TasksPage() {
               {task.status}
             </span>
 
-            <button className="task-menu" aria-label={`Options for ${task.title}`}>
-              <MoreHorizontal size={18} />
+            <button
+              className="task-menu task-delete-button"
+              aria-label={`Delete ${task.title}`}
+              title="Delete task"
+              onClick={() => deleteTask(task)}
+            >
+              <Trash2 size={18} />
             </button>
           </article>
         ))}
@@ -255,95 +309,12 @@ export default function TasksPage() {
       </section>
 
       {showForm && (
-        <div className="task-modal-backdrop" onMouseDown={() => setShowForm(false)}>
-          <div className="task-modal" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="task-modal-heading">
-              <div>
-                <span>New task</span>
-                <h2>Add something to your day</h2>
-              </div>
-              <button onClick={() => setShowForm(false)}>×</button>
-            </div>
-
-            <form
-              className="task-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                setShowForm(false);
-              }}
-            >
-              <label>
-                <span>Task name</span>
-                <input placeholder="e.g. Study for INF3014F" autoFocus required />
-              </label>
-
-              <label>
-                <span>Description <small>optional</small></span>
-                <textarea placeholder="Add a few details..." rows={3} />
-              </label>
-
-              <div className="task-form-row">
-                <label>
-                  <span>Category</span>
-                  <select defaultValue="Academic">
-                    <option>Academic</option>
-                    <option>Family</option>
-                    <option>Health</option>
-                    <option>Leisure</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Deadline</span>
-                  <input type="date" required />
-                </label>
-              </div>
-
-              <div className="task-form-row">
-                <label>
-                  <span>Time</span>
-                  <input type="time" required />
-                </label>
-                <label>
-                  <span>Duration</span>
-                  <select defaultValue="60">
-                    <option value="15">15 minutes</option>
-                    <option value="30">30 minutes</option>
-                    <option value="45">45 minutes</option>
-                    <option value="60">1 hour</option>
-                    <option value="90">1 hour 30 min</option>
-                    <option value="120">2 hours</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="task-form-row">
-                <label>
-                  <span>Importance</span>
-                  <select defaultValue="Medium">
-                    <option>Low</option>
-                    <option>Medium</option>
-                    <option>High</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Effort</span>
-                  <select defaultValue="Medium">
-                    <option>Low</option>
-                    <option>Medium</option>
-                    <option>High</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="task-form-actions">
-                <button type="button" onClick={() => setShowForm(false)}>
-                  Cancel
-                </button>
-                <button type="submit">Add Task</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AddTaskModal
+          onClose={() => setShowForm(false)}
+          onTaskAdded={(created) =>
+            setTasks((current) => [...current, fromApiTask(created)])
+          }
+        />
       )}
     </div>
   );
