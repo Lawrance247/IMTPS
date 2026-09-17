@@ -337,3 +337,46 @@
     font-size: 2.7rem;
   }
 }
+
+/* Focus task selector */
+.focus-task-picker {
+  width: min(100%, 520px);
+  margin: 18px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.focus-task-picker > span {
+  color: var(--text-muted);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.focus-task-picker select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 42px 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: .86rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.focus-task-picker select:hover,
+.focus-task-picker select:focus {
+  border-color: var(--primary);
+}
+
+.focus-task-picker select option {
+  background: var(--surface);
+  color: var(--text);
+}
+

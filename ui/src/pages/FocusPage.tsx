@@ -8,7 +8,7 @@ import {
   Square,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./FocusPage.css";
 
 type FocusTask = {
@@ -16,7 +16,11 @@ type FocusTask = {
   title: string;
   description: string;
   category: string;
+  deadline?: string;
   durationMinutes: number;
+  importance?: string;
+  effort?: string;
+  status?: string;
 };
 
 type ScheduledItem = {
@@ -45,7 +49,11 @@ function formatDuration(totalSeconds: number) {
 
 export default function FocusPage() {
   const location = useLocation();
-  const selectedTask = (location.state as FocusLocationState | null)?.task;
+  const navigate = useNavigate();
+  const routeTask = (location.state as FocusLocationState | null)?.task;
+  const [selectedTask, setSelectedTask] = useState<FocusTask | undefined>(routeTask);
+  const [availableTasks, setAvailableTasks] = useState<FocusTask[]>([]);
+  const [taskLoadError, setTaskLoadError] = useState("");
   const totalSeconds = Math.max((selectedTask?.durationMinutes ?? 60) * 60, 60);
 
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
@@ -53,6 +61,26 @@ export default function FocusPage() {
   const [completed, setCompleted] = useState(false);
   const [nextTask, setNextTask] = useState<ScheduledItem | null>(null);
   const [completeError, setCompleteError] = useState("");
+
+  useEffect(() => {
+    async function loadAvailableTasks() {
+      setTaskLoadError("");
+
+      try {
+        const response = await fetch("http://localhost:8080/api/tasks");
+        if (!response.ok) throw new Error("Could not load tasks");
+
+        const tasks: FocusTask[] = await response.json();
+        setAvailableTasks(tasks.filter((task) => task.status !== "DONE"));
+      } catch (error) {
+        setTaskLoadError(
+          error instanceof Error ? error.message : "Could not load tasks",
+        );
+      }
+    }
+
+    loadAvailableTasks();
+  }, []);
 
   useEffect(() => {
     setSecondsLeft(totalSeconds);
@@ -126,6 +154,9 @@ export default function FocusPage() {
       }
 
       setCompleted(true);
+      setAvailableTasks((current) =>
+        current.filter((task) => task.id !== selectedTask.id),
+      );
     } catch (error) {
       setCompleteError(
         error instanceof Error ? error.message : "Could not mark task as complete",
@@ -141,7 +172,7 @@ export default function FocusPage() {
           <h1>Focus Mode</h1>
           <p>One task. One session. Give it your attention.</p>
         </div>
-        <button className="focus-exit" onClick={() => setRunning(false)}>
+        <button className="focus-exit" onClick={() => navigate("/today")}>
           <Square size={15} />
           Exit Focus
         </button>
@@ -154,10 +185,34 @@ export default function FocusPage() {
             {selectedTask ? displayCategory(selectedTask.category) : "No task selected"}
           </div>
 
+          <label className="focus-task-picker">
+            <span>Select task</span>
+            <select
+              value={selectedTask?.id ?? ""}
+              onChange={(event) => {
+                const task = availableTasks.find(
+                  (item) => item.id === event.target.value,
+                );
+                setSelectedTask(task);
+                setCompleteError("");
+              }}
+            >
+              <option value="">Select a task</option>
+              {availableTasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          {taskLoadError && (
+            <p className="focus-task-description">{taskLoadError}</p>
+          )}
+
           <span className="focus-current-label">Current task</span>
           <h2>{selectedTask?.title ?? "Choose a task to start focusing"}</h2>
           <p className="focus-task-description">
-            {selectedTask?.description || "Start Focus from Today to work on a scheduled task."}
+            {selectedTask?.description || "Select any unfinished task above to start a focus session."}
           </p>
 
           <div
