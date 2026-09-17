@@ -51,7 +51,7 @@ export default function TodayPage() {
   const [showFocusPicker, setShowFocusPicker] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
-  const [currentSchedule] = useState<CurrentSchedule | null>(() => {
+  const [currentSchedule, setCurrentSchedule] = useState<CurrentSchedule | null>(() => {
     const saved = localStorage.getItem("imtps.currentSchedule");
     if (!saved) return null;
 
@@ -69,8 +69,12 @@ export default function TodayPage() {
     String(today.getDate()).padStart(2, "0"),
   ].join("-");
 
-  const schedule =
+  const fullSchedule =
     currentSchedule?.date === todayDate ? currentSchedule.items : [];
+
+  const schedule = fullSchedule.filter(
+    (item) => !completedTaskIds.has(item.task.id),
+  );
 
   useEffect(() => {
     async function loadTaskStatuses() {
@@ -95,11 +99,11 @@ export default function TodayPage() {
   }, []);
 
   const recommendedTask = schedule[0];
-  const totalToday = schedule.length;
-  const completedToday = schedule.filter((item) =>
+  const totalToday = fullSchedule.length;
+  const completedToday = fullSchedule.filter((item) =>
     completedTaskIds.has(item.task.id),
   ).length;
-  const remainingToday = Math.max(totalToday - completedToday, 0);
+  const remainingToday = schedule.length;
   const progressPercent =
     totalToday === 0 ? 0 : Math.round((completedToday / totalToday) * 100);
 
@@ -177,7 +181,7 @@ export default function TodayPage() {
 
           <div className="progress-ring">
             <div>
-              <strong>3/6</strong>
+              <strong>{completedToday}/{totalToday}</strong>
               <span>completed</span>
             </div>
           </div>
