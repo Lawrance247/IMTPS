@@ -4,6 +4,7 @@ import {
   Crosshair,
   FileText,
   LayoutDashboard,
+  BookOpen,
   ListTodo,
   LogOut,
   Settings,
@@ -18,6 +19,7 @@ const items = [
   { to: "/focus", label: "Focus", icon: Crosshair },
   { to: "/notes", label: "Notes", icon: FileText },
   { to: "/insights", label: "Insights", icon: BarChart3 },
+  { to: "/strategies", label: "About Strategies", icon: BookOpen },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "./components/layout/AppShell";
+import StrategiesPage from "./pages/StrategiesPage";
 import FocusPage from "./pages/FocusPage";
 import InsightsPage from "./pages/InsightsPage";
 import LoginPage from "./pages/LoginPage";
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/focus" element={<FocusPage />} />
         <Route path="/notes" element={<NotesPage />} />
         <Route path="/insights" element={<InsightsPage />} />
+        <Route path="/strategies" element={<StrategiesPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
 
