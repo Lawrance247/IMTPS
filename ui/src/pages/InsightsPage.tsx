@@ -6,6 +6,7 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import "./InsightsPage.css";
 
 const days = [
@@ -25,7 +26,35 @@ const categories = [
   { name: "Leisure", value: 15, className: "leisure" },
 ];
 
+type ApiTask = {
+  id: string;
+  status: string;
+};
+
 export default function InsightsPage() {
+  const [taskCount, setTaskCount] = useState(0);
+  const [completedTaskCount, setCompletedTaskCount] = useState(0);
+
+  useEffect(() => {
+    async function loadTaskSummary() {
+      try {
+        const response = await fetch("http://localhost:8080/api/tasks");
+        if (!response.ok) throw new Error("Could not load tasks");
+
+        const tasks: ApiTask[] = await response.json();
+        setTaskCount(tasks.length);
+        setCompletedTaskCount(
+          tasks.filter((task) => task.status === "DONE").length,
+        );
+      } catch {
+        setTaskCount(0);
+        setCompletedTaskCount(0);
+      }
+    }
+
+    loadTaskSummary();
+  }, []);
+
   return (
     <div className="insights-page">
       <header className="insights-header">
@@ -41,8 +70,8 @@ export default function InsightsPage() {
         <article className="metric-card">
           <div className="metric-icon"><CheckCircle2 size={20} /></div>
           <span>Tasks completed</span>
-          <strong>18</strong>
-          <small>of 24 planned</small>
+          <strong>{completedTaskCount}</strong>
+          <small>of {taskCount} tasks</small>
         </article>
 
         <article className="metric-card">
