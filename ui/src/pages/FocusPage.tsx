@@ -1,6 +1,5 @@
 import {
   Check,
-  ChevronRight,
   Clock3,
   GraduationCap,
   Pause,
@@ -9,14 +8,74 @@ import {
   Square,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import "./FocusPage.css";
 
-const TOTAL_SECONDS = 90 * 60;
+type FocusTask = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  durationMinutes: number;
+};
+
+type ScheduledItem = {
+  task: FocusTask;
+  startTime: string;
+  endTime: string;
+};
+
+type FocusLocationState = {
+  task?: FocusTask;
+};
+
+function displayCategory(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+function formatDuration(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return [hours, minutes, seconds]
+    .map((value) => String(value).padStart(2, "0"))
+    .join(":");
+}
 
 export default function FocusPage() {
-  const [secondsLeft, setSecondsLeft] = useState(45 * 60 + 12);
+  const location = useLocation();
+  const selectedTask = (location.state as FocusLocationState | null)?.task;
+  const totalSeconds = Math.max((selectedTask?.durationMinutes ?? 60) * 60, 60);
+
+  const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
   const [running, setRunning] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [nextTask, setNextTask] = useState<ScheduledItem | null>(null);
+  const [completeError, setCompleteError] = useState("");
+
+  useEffect(() => {
+    setSecondsLeft(totalSeconds);
+    setRunning(false);
+    setCompleted(false);
+  }, [totalSeconds, selectedTask?.id]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("imtps.currentSchedule");
+    if (!saved || !selectedTask) {
+      setNextTask(null);
+      return;
+    }
+
+    try {
+      const plan = JSON.parse(saved) as { items?: ScheduledItem[] };
+      const items = plan.items ?? [];
+      const currentIndex = items.findIndex((item) => item.task.id === selectedTask.id);
+      setNextTask(currentIndex >= 0 ? items[currentIndex + 1] ?? null : null);
+    } catch {
+      setNextTask(null);
+    }
+  }, [selectedTask?.id]);
 
   useEffect(() => {
     if (!running || secondsLeft <= 0) return;
@@ -36,17 +95,42 @@ export default function FocusPage() {
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
-  const progress = ((TOTAL_SECONDS - secondsLeft) / TOTAL_SECONDS) * 100;
+  const progress = ((totalSeconds - secondsLeft) / totalSeconds) * 100;
 
   function resetTimer() {
-    setSecondsLeft(TOTAL_SECONDS);
+    setSecondsLeft(totalSeconds);
     setRunning(false);
     setCompleted(false);
   }
 
-  function finishTask() {
+  async function finishTask() {
+    if (!selectedTask) return;
+
     setRunning(false);
-    setCompleted(true);
+    setCompleteError("");
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/tasks/${selectedTask.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...selectedTask,
+          status: "DONE",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not mark task as complete");
+      }
+
+      setCompleted(true);
+    } catch (error) {
+      setCompleteError(
+        error instanceof Error ? error.message : "Could not mark task as complete",
+      );
+    }
   }
 
   return (
@@ -67,13 +151,13 @@ export default function FocusPage() {
         <article className="focus-timer-card">
           <div className="focus-category">
             <GraduationCap size={17} />
-            Academic
+            {selectedTask ? displayCategory(selectedTask.category) : "No task selected"}
           </div>
 
           <span className="focus-current-label">Current task</span>
-          <h2>Study CSC3003S</h2>
+          <h2>{selectedTask?.title ?? "Choose a task to start focusing"}</h2>
           <p className="focus-task-description">
-            Review the TOA material and complete the practice questions.
+            {selectedTask?.description || "Start Focus from Today to work on a scheduled task."}
           </p>
 
           <div
@@ -88,7 +172,7 @@ export default function FocusPage() {
                 {String(minutes).padStart(2, "0")}:
                 {String(seconds).padStart(2, "0")}
               </strong>
-              <small>of 01:30:00</small>
+              <small>of {formatDuration(totalSeconds)}</small>
             </div>
           </div>
 
@@ -122,16 +206,18 @@ export default function FocusPage() {
           <button
             className={`focus-complete ${completed ? "done" : ""}`}
             onClick={finishTask}
+            disabled={!selectedTask || completed}
           >
             <Check size={18} />
             {completed ? "Task Completed" : "Mark Complete"}
           </button>
+          {completeError && <p className="focus-task-description">{completeError}</p>}
         </article>
 
         <aside className="focus-side">
           <article className="focus-info-card">
             <span>Session</span>
-            <h3>90 minutes</h3>
+            <h3>{selectedTask ? `${selectedTask.durationMinutes} minutes` : "No active session"}</h3>
             <div className="focus-stat">
               <Clock3 size={17} />
               <div>
@@ -146,11 +232,20 @@ export default function FocusPage() {
             <div className="next-up-icon">
               <GraduationCap size={21} />
             </div>
-            <h3>INF3011F reading</h3>
-            <p>10:00 – 11:00 · 60 min</p>
-            <button>
-              View task <ChevronRight size={16} />
-            </button>
+            {nextTask ? (
+              <>
+                <h3>{nextTask.task.title}</h3>
+                <p>
+                  {nextTask.startTime.slice(11, 16)} – {nextTask.endTime.slice(11, 16)}
+                  {" · "}{nextTask.task.durationMinutes} min
+                </p>
+              </>
+            ) : (
+              <>
+                <h3>No task next</h3>
+                <p>Your current schedule has no task after this one.</p>
+              </>
+            )}
           </article>
 
           <article className="focus-message">
