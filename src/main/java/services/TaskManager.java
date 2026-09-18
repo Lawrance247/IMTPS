@@ -57,8 +57,18 @@ public class TaskManager
     {
         validateDeadline(deadline);
         validateTaskFields(title, category, durationMinutes, effort, importance);
-        Task task = new Task(title, description, category, deadline, durationMinutes, effort, importance);
+        Task task = new Task(title, description, category, deadline, durationMinutes, importance, effort);
         taskDB.add(task);
+        return task;
+    }
+
+    /** Creates and stores a task owned by one authenticated user. */
+    public Task createTask(String title, String description, Category category, LocalDateTime deadline, int durationMinutes, Weights importance, Weights effort, String userId)
+    {
+        validateDeadline(deadline);
+        validateTaskFields(title, category, durationMinutes, effort, importance);
+        Task task = new Task(title, description, category, deadline, durationMinutes, importance, effort);
+        taskDB.add(task, userId);
         return task;
     }
 
@@ -69,7 +79,12 @@ public class TaskManager
      */
     public Task getTaskById(String id) 
     {
-    return taskDB.findById(id);
+        return taskDB.findById(id);
+    }
+
+    public Task getTaskById(String id, String userId)
+    {
+        return taskDB.findById(id, userId);
     }
 
 
@@ -86,6 +101,13 @@ public class TaskManager
         taskDB.update(task);
     }
 
+    public void updateTask(Task task, String userId)
+    {
+        validateDeadline(task.getDeadline());
+        validateTaskFields(task.getTitle(), task.getCategory(), task.getDurationMinutes(), task.getImportance(), task.getEffort());
+        taskDB.update(task, userId);
+    }
+
 
     /** @param id the ID of the task to delete */
     public void deleteTask(String id) 
@@ -93,11 +115,21 @@ public class TaskManager
         taskDB.remove(id);
     }
 
+    public void deleteTask(String id, String userId)
+    {
+        taskDB.remove(id, userId);
+    }
+
 
     /** @return every currently stored task, as a fresh list (see {@link TaskDB#findAll()}) */
     public List<Task> getAllTasks() 
     {
         return taskDB.findAll();
+    }
+
+    public List<Task> getAllTasks(String userId)
+    {
+        return taskDB.findAll(userId);
     }
 
 

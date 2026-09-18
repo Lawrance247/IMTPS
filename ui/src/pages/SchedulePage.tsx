@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
 import {
   CalendarDays,
   ChevronLeft,
@@ -49,7 +51,7 @@ export default function SchedulePage() {
   const [strategy, setStrategy] = useState<Strategy>("focus");
   const [focusCategory, setFocusCategory] = useState<FocusCategory>("ACADEMIC");
   const dateInputRef = useRef<HTMLInputElement>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 8, 17));
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,9 +93,9 @@ export default function SchedulePage() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:8080/api/schedules/generate", {
+      const response = await fetch(`${API_BASE_URL}/schedules/generate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({
           strategy,
           focusCategory,
@@ -166,11 +168,7 @@ export default function SchedulePage() {
                 const input = dateInputRef.current;
                 if (!input) return;
 
-                if ("showPicker" in input) {
-                  input.showPicker();
-                } else {
-                  input.click();
-                }
+                input.showPicker?.();
               }}
             >
               <CalendarDays size={17} />

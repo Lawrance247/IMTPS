@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
 export type Category = "ACADEMIC" | "FAMILY" | "HEALTH" | "LEISURE";
 export type Weight = "LOW" | "MEDIUM" | "HIGH";
 export type TaskStatus = "TO_DO" | "IN_PROGRESS" | "DONE";
@@ -30,12 +32,11 @@ export type ScheduleResponse = {
   deadlineClashes: number;
 };
 
-const API_URL = "http://localhost:8080/api";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: { ...authHeaders(true), ...options?.headers },
   });
 
   if (!response.ok) {

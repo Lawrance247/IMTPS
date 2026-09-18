@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
 import {
   Check,
   Clock3,
@@ -67,7 +69,7 @@ export default function FocusPage() {
       setTaskLoadError("");
 
       try {
-        const response = await fetch("http://localhost:8080/api/tasks");
+        const response = await fetch(`${API_BASE_URL}/tasks`, { headers: authHeaders() });
         if (!response.ok) throw new Error("Could not load tasks");
 
         const tasks: FocusTask[] = await response.json();
@@ -138,11 +140,9 @@ export default function FocusPage() {
     setCompleteError("");
 
     try {
-      const response = await fetch(`http://localhost:8080/api/tasks/${selectedTask.id}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${selectedTask.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: authHeaders(true),
         body: JSON.stringify({
           ...selectedTask,
           status: "DONE",

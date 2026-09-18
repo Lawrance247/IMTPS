@@ -11,18 +11,45 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import "./SettingsPage.css";
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
 
 type Theme = "light" | "dark";
 type Strategy = "deadline" | "focus" | "slack" | "balance";
 type FocusMinutes = "30" | "45" | "60" | "90";
 type SettingsSection = "profile" | "appearance" | "notifications" | "account";
 
+type LoggedInUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  createdAt: string;
+};
+
 const themes: { id: Theme; label: string; icon: typeof Sun }[] = [
   { id: "light", label: "Light", icon: Sun },
   { id: "dark", label: "Dark", icon: Moon },
 ];
 
+function loadCurrentUser(): LoggedInUser | null {
+  const saved = localStorage.getItem("imtps.currentUser");
+  if (!saved) return null;
+
+  try {
+    return JSON.parse(saved) as LoggedInUser;
+  } catch {
+    return null;
+  }
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return parts.slice(0, 2).map((part) => part[0].toUpperCase()).join("");
+}
+
 export default function SettingsPage() {
+  const currentUser = loadCurrentUser();
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("impts-theme") as Theme) || "dark",
   );
@@ -34,20 +61,64 @@ export default function SettingsPage() {
   const [defaultFocusMinutes, setDefaultFocusMinutes] = useState<FocusMinutes>(
     () => (localStorage.getItem("imtps.defaultFocusMinutes") as FocusMinutes) || "60",
   );
+  const [dailyReminder, setDailyReminder] = useState(
+    () => localStorage.getItem("imtps.dailyReminder") !== "false",
+  );
 
   useEffect(() => {
     const root = document.documentElement;
-
     root.dataset.theme = theme;
     localStorage.setItem("impts-theme", theme);
   }, [theme]);
 
-  function saveSettings() {
-    localStorage.setItem("imtps.defaultStrategy", defaultStrategy);
-    localStorage.setItem("imtps.defaultFocusMinutes", defaultFocusMinutes);
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+          headers: authHeaders(),
+        });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        setTheme(data.theme as Theme);
+        setDefaultStrategy(data.defaultStrategy as Strategy);
+        setDefaultFocusMinutes(String(data.defaultFocusMinutes) as FocusMinutes);
+        setDailyReminder(Boolean(data.dailyReminder));
+      } catch {
+        // Keep the local defaults if the API is temporarily unavailable.
+      }
+    }
+    loadSettings();
+  }, []);
+
+  async function saveSettings() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/settings`, {
+        method: "PUT",
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          theme,
+          defaultStrategy,
+          defaultFocusMinutes: Number(defaultFocusMinutes),
+          dailyReminder,
+        }),
+      });
+
+      if (!response.ok) return;
+
+      // Keep these small local copies because Schedule and Focus use them immediately.
+      localStorage.setItem("imtps.defaultStrategy", defaultStrategy);
+      localStorage.setItem("imtps.defaultFocusMinutes", defaultFocusMinutes);
+      localStorage.setItem("imtps.dailyReminder", String(dailyReminder));
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1800);
+    } catch {
+      // Leave the form unchanged so the user can try saving again.
+    }
   }
+
+  const name = currentUser?.fullName || "User";
+  const email = currentUser?.email || "No email available";
 
   return (
     <div className="settings-page">
@@ -65,28 +136,16 @@ export default function SettingsPage() {
 
       <div className="settings-layout">
         <aside className="settings-nav">
-          <button
-            className={activeSection === "profile" ? "active" : ""}
-            onClick={() => setActiveSection("profile")}
-          >
+          <button className={activeSection === "profile" ? "active" : ""} onClick={() => setActiveSection("profile")}>
             <UserRound size={17} />Profile<ChevronRight size={15} />
           </button>
-          <button
-            className={activeSection === "appearance" ? "active" : ""}
-            onClick={() => setActiveSection("appearance")}
-          >
+          <button className={activeSection === "appearance" ? "active" : ""} onClick={() => setActiveSection("appearance")}>
             <Palette size={17} />Appearance<ChevronRight size={15} />
           </button>
-          <button
-            className={activeSection === "notifications" ? "active" : ""}
-            onClick={() => setActiveSection("notifications")}
-          >
+          <button className={activeSection === "notifications" ? "active" : ""} onClick={() => setActiveSection("notifications")}>
             <Bell size={17} />Notifications<ChevronRight size={15} />
           </button>
-          <button
-            className={activeSection === "account" ? "active" : ""}
-            onClick={() => setActiveSection("account")}
-          >
+          <button className={activeSection === "account" ? "active" : ""} onClick={() => setActiveSection("account")}>
             <Lock size={17} />Account<ChevronRight size={15} />
           </button>
         </aside>
@@ -96,37 +155,26 @@ export default function SettingsPage() {
             <>
               <section className="settings-card">
                 <div className="settings-card-heading">
-                  <div>
-                    <span>Profile</span>
-                    <h2>Your details</h2>
-                  </div>
+                  <div><span>Profile</span><h2>Your details</h2></div>
                   <UserRound size={20} />
                 </div>
-
                 <div className="profile-row">
-                  <div className="profile-avatar">?</div>
+                  <div className="profile-avatar">{initials(name)}</div>
                   <div>
-                    <strong>No user profile loaded</strong>
-                    <span>User details will be loaded from the database after authentication is connected.</span>
+                    <strong>{name}</strong>
+                    <span>{email}</span>
                   </div>
                 </div>
               </section>
 
               <section className="settings-card">
                 <div className="settings-card-heading">
-                  <div>
-                    <span>Planning</span>
-                    <h2>Default preferences</h2>
-                  </div>
+                  <div><span>Planning</span><h2>Default preferences</h2></div>
                 </div>
-
                 <div className="settings-form-grid">
                   <label>
                     <span>Default strategy</span>
-                    <select
-                      value={defaultStrategy}
-                      onChange={(event) => setDefaultStrategy(event.target.value as Strategy)}
-                    >
+                    <select value={defaultStrategy} onChange={(event) => setDefaultStrategy(event.target.value as Strategy)}>
                       <option value="deadline">Earliest Deadline First</option>
                       <option value="focus">Weighted Focus Mode</option>
                       <option value="slack">Slack Focus</option>
@@ -135,10 +183,7 @@ export default function SettingsPage() {
                   </label>
                   <label>
                     <span>Default focus session</span>
-                    <select
-                      value={defaultFocusMinutes}
-                      onChange={(event) => setDefaultFocusMinutes(event.target.value as FocusMinutes)}
-                    >
+                    <select value={defaultFocusMinutes} onChange={(event) => setDefaultFocusMinutes(event.target.value as FocusMinutes)}>
                       <option value="30">30 minutes</option>
                       <option value="45">45 minutes</option>
                       <option value="60">60 minutes</option>
@@ -153,26 +198,15 @@ export default function SettingsPage() {
           {activeSection === "appearance" && (
             <section className="settings-card">
               <div className="settings-card-heading">
-                <div>
-                  <span>Appearance</span>
-                  <h2>Choose your theme</h2>
-                </div>
+                <div><span>Appearance</span><h2>Choose your theme</h2></div>
                 <Palette size={20} />
               </div>
-
               <div className="theme-options">
                 {themes.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    className={theme === id ? "active" : ""}
-                    onClick={() => setTheme(id)}
-                  >
+                  <button key={id} className={theme === id ? "active" : ""} onClick={() => setTheme(id)}>
                     <span><Icon size={21} /></span>
                     <strong>{label}</strong>
-                    <small>
-                      {id === "light" && "Bright and clean"}
-                      {id === "dark" && "Easy on the eyes"}
-                    </small>
+                    <small>{id === "light" ? "Bright and clean" : "Easy on the eyes"}</small>
                     {theme === id && <Check className="theme-check" size={16} />}
                   </button>
                 ))}
@@ -187,7 +221,7 @@ export default function SettingsPage() {
                 <span>Remind me to review my plan at the start of the day.</span>
               </div>
               <label className="settings-switch">
-                <input type="checkbox" defaultChecked />
+                <input type="checkbox" checked={dailyReminder} onChange={(event) => setDailyReminder(event.target.checked)} />
                 <span />
               </label>
             </section>
@@ -196,17 +230,14 @@ export default function SettingsPage() {
           {activeSection === "account" && (
             <section className="settings-card">
               <div className="settings-card-heading">
-                <div>
-                  <span>Account</span>
-                  <h2>Account settings</h2>
-                </div>
+                <div><span>Account</span><h2>Account settings</h2></div>
                 <Lock size={20} />
               </div>
               <div className="profile-row">
-                <div className="profile-avatar">?</div>
+                <div className="profile-avatar">{initials(name)}</div>
                 <div>
-                  <strong>No account loaded</strong>
-                  <span>Account details will be read from the user database after login and registration are connected.</span>
+                  <strong>{name}</strong>
+                  <span>{email}</span>
                 </div>
               </div>
             </section>

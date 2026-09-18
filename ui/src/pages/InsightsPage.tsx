@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
 import {
   Activity,
   CheckCircle2,
@@ -38,7 +40,7 @@ export default function InsightsPage() {
   useEffect(() => {
     async function loadTaskSummary() {
       try {
-        const response = await fetch("http://localhost:8080/api/tasks");
+        const response = await fetch(`${API_BASE_URL}/tasks`, { headers: authHeaders() });
         if (!response.ok) throw new Error("Could not load tasks");
 
         const tasks: ApiTask[] = await response.json();

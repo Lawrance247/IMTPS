@@ -1,4 +1,7 @@
-import { FormEvent, useState } from "react";
+import { API_BASE_URL } from "../../config";
+import { authHeaders } from "../../auth";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import "../../pages/TasksPage.css";
 
 type ApiTask = {
@@ -18,7 +21,7 @@ type AddTaskModalProps = {
   onTaskAdded?: (task: ApiTask) => void;
 };
 
-const API_URL = "http://localhost:8080/api/tasks";
+const API_URL = `${API_BASE_URL}/tasks`;
 
 export default function AddTaskModal({ onClose, onTaskAdded }: AddTaskModalProps) {
   const [error, setError] = useState("");
@@ -36,7 +39,7 @@ export default function AddTaskModal({ onClose, onTaskAdded }: AddTaskModalProps
 
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({
           title: String(form.get("title")),
           description: String(form.get("description") ?? ""),

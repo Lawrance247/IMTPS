@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
 import {
   CalendarDays,
   ChevronDown,
@@ -40,7 +42,7 @@ type ApiTask = {
   status: string;
 };
 
-const API_URL = "http://localhost:8080/api/tasks";
+const API_URL = `${API_BASE_URL}/tasks`;
 
 function titleCase(value: string) {
   return value
@@ -100,7 +102,7 @@ export default function TasksPage() {
       setLoading(true);
       setError("");
 
-      const response = await fetch(API_URL);
+      const response = await fetch(API_URL, { headers: authHeaders() });
       if (!response.ok) {
         throw new Error("Could not load tasks");
       }
@@ -134,7 +136,7 @@ export default function TasksPage() {
 
       const response = await fetch(`${API_URL}/${task.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({
           title: task.title,
           description: task.description,
@@ -166,7 +168,7 @@ export default function TasksPage() {
   async function deleteTask(task: Task) {
     try {
       setError("");
-      const response = await fetch(`${API_URL}/${task.id}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}/${task.id}`, { method: "DELETE", headers: authHeaders() });
       if (!response.ok) throw new Error("Could not delete task");
       setTasks((current) => current.filter((item) => item.id !== task.id));
     } catch (err) {

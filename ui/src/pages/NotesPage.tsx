@@ -7,30 +7,23 @@ import {
   StickyNote,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
+import type { FormEvent } from "react";
 import "./NotesPage.css";
 
 type Note = {
-  id: number;
+  id: string;
   title: string;
   body: string;
   tag: string;
-  date: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
-const STORAGE_KEY = "imtps.notes";
-
-function loadNotes(): Note[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
-
-function todayLabel() {
-  return new Date().toLocaleDateString("en-ZA", {
+function noteDate(value: string) {
+  return new Date(value).toLocaleDateString("en-ZA", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -38,17 +31,40 @@ function todayLabel() {
 }
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState<Note[]>(loadNotes);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-  }, [notes]);
+    async function loadNotes() {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/notes`, { headers: authHeaders() });
+        if (!response.ok) throw new Error("Could not load notes.");
+        setNotes(await response.json());
+      } catch (requestError) {
+        setError(requestError instanceof Error ? requestError.message : "Could not load notes.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadNotes();
+  }, []);
 
-  function deleteNote(id: number) {
-    setNotes((current) => current.filter((note) => note.id !== id));
+  async function deleteNote(id: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notes/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (!response.ok) throw new Error("Could not delete note.");
+      setNotes((current) => current.filter((note) => note.id !== id));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not delete note.");
+    }
   }
 
   function openNewNote() {
@@ -76,7 +92,7 @@ export default function NotesPage() {
     [notes, query],
   );
 
-  function saveNote(event: FormEvent<HTMLFormElement>) {
+  async function saveNote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const title = String(form.get("title") ?? "").trim();
@@ -85,28 +101,27 @@ export default function NotesPage() {
 
     if (!title || !body) return;
 
-    if (editingNote) {
-      setNotes((current) =>
-        current.map((note) =>
-          note.id === editingNote.id
-            ? { ...note, title, body, tag }
-            : note,
-        ),
-      );
-    } else {
-      setNotes((current) => [
-        {
-          id: Date.now(),
-          title,
-          body,
-          tag,
-          date: todayLabel(),
-        },
-        ...current,
-      ]);
-    }
+    try {
+      const url = editingNote
+        ? `${API_BASE_URL}/notes/${editingNote.id}`
+        : `${API_BASE_URL}/notes`;
+      const response = await fetch(url, {
+        method: editingNote ? "PUT" : "POST",
+        headers: authHeaders(true),
+        body: JSON.stringify({ title, body, tag }),
+      });
+      if (!response.ok) throw new Error("Could not save note.");
 
-    closeForm();
+      const savedNote: Note = await response.json();
+      setNotes((current) =>
+        editingNote
+          ? current.map((note) => note.id === savedNote.id ? savedNote : note)
+          : [savedNote, ...current],
+      );
+      closeForm();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not save note.");
+    }
   }
 
   return (
@@ -140,6 +155,9 @@ export default function NotesPage() {
         </div>
       </section>
 
+      {error && <p className="notes-error">{error}</p>}
+      {loading && <p>Loading notes...</p>}
+
       <section className="notes-grid">
         {filteredNotes.map((note) => (
           <article className="note-card" key={note.id}>
@@ -171,7 +189,7 @@ export default function NotesPage() {
             <p>{note.body}</p>
 
             <footer>
-              <span>{note.date}</span>
+              <span>{noteDate(note.updatedAt)}</span>
             </footer>
           </article>
         ))}

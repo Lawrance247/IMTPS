@@ -1,5 +1,7 @@
+import { API_BASE_URL } from "../config";
 import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./LoginPage.css";
 
@@ -12,6 +14,11 @@ type LoggedInUser = {
 
 type ApiError = {
   error?: string;
+};
+
+type LoginResponse = {
+  token: string;
+  user: LoggedInUser;
 };
 
 export default function LoginPage() {
@@ -31,7 +38,7 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,9 +54,10 @@ export default function LoginPage() {
         throw new Error(body.error || "Invalid email or password.");
       }
 
-      const user: LoggedInUser = await response.json();
+      const data: LoginResponse = await response.json();
 
-      localStorage.setItem("imtps.currentUser", JSON.stringify(user));
+      localStorage.setItem("imtps.authToken", data.token);
+      localStorage.setItem("imtps.currentUser", JSON.stringify(data.user));
       navigate("/today");
     } catch (requestError) {
       setError(

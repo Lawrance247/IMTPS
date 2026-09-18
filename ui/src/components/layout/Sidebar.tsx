@@ -12,6 +12,30 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
+type LoggedInUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  createdAt: string;
+};
+
+function loadCurrentUser(): LoggedInUser | null {
+  const saved = localStorage.getItem("imtps.currentUser");
+  if (!saved) return null;
+
+  try {
+    return JSON.parse(saved) as LoggedInUser;
+  } catch {
+    return null;
+  }
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return parts.slice(0, 2).map((part) => part[0].toUpperCase()).join("");
+}
+
 const items = [
   { to: "/today", label: "Today", icon: LayoutDashboard },
   { to: "/tasks", label: "Tasks", icon: ListTodo },
@@ -25,6 +49,15 @@ const items = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const currentUser = loadCurrentUser();
+  const displayName = currentUser?.fullName || "User";
+
+  function signOut() {
+    localStorage.removeItem("imtps.authToken");
+    localStorage.removeItem("imtps.currentUser");
+    localStorage.removeItem("imtps.currentSchedule");
+    navigate("/login", { replace: true });
+  }
 
   return (
     <aside className="sidebar">
@@ -52,14 +85,14 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-user">
-        <div className="sidebar-avatar">LM</div>
+        <div className="sidebar-avatar">{initials(displayName)}</div>
         <div className="sidebar-user-copy">
-          <strong>Lawrence</strong>
-          <small>Student</small>
+          <strong>{displayName}</strong>
+          <small>{currentUser?.email || "Signed in"}</small>
         </div>
         <button
           className="sidebar-logout"
-          onClick={() => navigate("/login")}
+          onClick={signOut}
           aria-label="Sign out"
         >
           <LogOut size={17} />

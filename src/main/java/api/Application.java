@@ -6,11 +6,14 @@ import java.util.concurrent.Executors;
 
 import com.sun.net.httpserver.HttpServer;
 
+import repositories.DatabaseConnection;
 import repositories.TaskDB;
 import services.TaskManager;
 
 public class Application {
     public static void main(String[] args) throws IOException {
+        DatabaseConnection.initializeDatabase();
+
         TaskManager taskManager = new TaskManager(new TaskDB());
         ApiHandler apiHandler = new ApiHandler(taskManager);
 
@@ -18,6 +21,8 @@ public class Application {
         server.createContext("/api/auth/register", apiHandler::handleRegister);
         server.createContext("/api/auth/login", apiHandler::handleLogin);
         server.createContext("/api/tasks", apiHandler::handleTasks);
+        server.createContext("/api/notes", apiHandler::handleNotes);
+        server.createContext("/api/settings", apiHandler::handleSettings);
         server.createContext("/api/schedules/generate", apiHandler::handleSchedule);
         server.createContext("/api/schedules/compare", apiHandler::handleComparison);
         server.createContext("/api/health", apiHandler::handleHealth);

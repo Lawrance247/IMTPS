@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+import { authHeaders } from "../auth";
 import {
   ArrowRight,
   CalendarClock,
@@ -14,6 +16,13 @@ import "./TodayPage.css";
 type ApiTask = {
   id: string;
   status: string;
+};
+
+type LoggedInUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  createdAt: string;
 };
 
 type ScheduleItem = {
@@ -46,6 +55,12 @@ function displayCategory(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
+function getGreeting(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function TodayPage() {
   const navigate = useNavigate();
   const [showFocusPicker, setShowFocusPicker] = useState(false);
@@ -62,12 +77,30 @@ export default function TodayPage() {
     }
   });
 
+  const currentUser = (() => {
+    const saved = localStorage.getItem("imtps.currentUser");
+    if (!saved) return null;
+
+    try {
+      return JSON.parse(saved) as LoggedInUser;
+    } catch {
+      return null;
+    }
+  })();
+
   const today = new Date();
   const todayDate = [
     today.getFullYear(),
     String(today.getMonth() + 1).padStart(2, "0"),
     String(today.getDate()).padStart(2, "0"),
   ].join("-");
+  const displayDate = today.toLocaleDateString("en-ZA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const greeting = getGreeting(today.getHours());
+  const firstName = currentUser?.fullName?.trim().split(/\s+/)[0] || "there";
 
   const fullSchedule =
     currentSchedule?.date === todayDate ? currentSchedule.items : [];
@@ -79,7 +112,7 @@ export default function TodayPage() {
   useEffect(() => {
     async function loadTaskStatuses() {
       try {
-        const response = await fetch("http://localhost:8080/api/tasks");
+        const response = await fetch(`${API_BASE_URL}/tasks`, { headers: authHeaders() });
         if (!response.ok) return;
 
         const tasks: ApiTask[] = await response.json();
@@ -107,14 +140,12 @@ export default function TodayPage() {
   const progressPercent =
     totalToday === 0 ? 0 : Math.round((completedToday / totalToday) * 100);
 
-
-
   return (
     <div className="today-page">
       <header className="today-header">
         <div>
-          <span className="today-date">Thursday, 17 September</span>
-          <h1>Good afternoon, Lawrence <span aria-hidden="true">👋</span></h1>
+          <span className="today-date">{displayDate}</span>
+          <h1>{greeting}, {firstName} <span aria-hidden="true">👋</span></h1>
           <p>Small steps today, big results tomorrow.</p>
         </div>
         <button className="today-add-task" onClick={() => setShowAddTask(true)}>+ Add Task</button>

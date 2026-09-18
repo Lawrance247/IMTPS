@@ -24,7 +24,12 @@ import models.Task;
 import services.Comparison;
 import services.Scheduler;
 import services.TaskManager;
+import repositories.NoteDB;
+import repositories.UserSettingsDB;
+import taskmanagement.Note;
+import taskmanagement.UserSettings;
 import taskmanagement.AuthManager;
+import taskmanagement.SessionManager;
 import taskmanagement.User;
 import strategies.CategoryBalanceStrategy;
 import strategies.EarliestDeadlineFirstStrategy;
@@ -38,15 +43,23 @@ import utils.Weights;
 public class ApiHandler {
     private final TaskManager taskManager;
     private final AuthManager authManager;
+    private final SessionManager sessionManager;
+    private final NoteDB noteDB = new NoteDB();
+    private final UserSettingsDB userSettingsDB = new UserSettingsDB();
     private final Gson gson = new Gson();
 
     public ApiHandler(TaskManager taskManager) {
-        this(taskManager, new AuthManager());
+        this(taskManager, new AuthManager(), new SessionManager());
     }
 
     public ApiHandler(TaskManager taskManager, AuthManager authManager) {
+        this(taskManager, authManager, new SessionManager());
+    }
+
+    public ApiHandler(TaskManager taskManager, AuthManager authManager, SessionManager sessionManager) {
         this.taskManager = taskManager;
         this.authManager = authManager;
+        this.sessionManager = sessionManager;
     }
 
     public void handleRegister(HttpExchange exchange) throws IOException {
@@ -85,7 +98,11 @@ public class ApiHandler {
                     requiredString(body, "email"),
                     requiredString(body, "password"));
 
-            sendJson(exchange, 200, userJson(user));
+            String token = sessionManager.createSession(user);
+            JsonObject response = new JsonObject();
+            response.addProperty("token", token);
+            response.add("user", userJson(user));
+            sendJson(exchange, 200, response);
         } catch (IllegalArgumentException e) {
             sendError(exchange, 401, e.getMessage());
         } catch (Exception e) {
@@ -108,18 +125,21 @@ public class ApiHandler {
     public void handleTasks(HttpExchange exchange) throws IOException {
         if (preflight(exchange)) return;
         try {
+            String userId = requireUserId(exchange);
+            if (userId == null) return;
+
             String method = exchange.getRequestMethod();
             String id = taskId(exchange.getRequestURI());
 
             if ("GET".equals(method) && id == null) {
                 List<JsonObject> response = new ArrayList<>();
-                for (Task task : taskManager.getAllTasks()) response.add(taskJson(task));
+                for (Task task : taskManager.getAllTasks(userId)) response.add(taskJson(task));
                 sendJson(exchange, 200, response);
                 return;
             }
 
             if ("GET".equals(method) && id != null) {
-                Task task = taskManager.getTaskById(id);
+                Task task = taskManager.getTaskById(id, userId);
                 if (task == null) {
                     sendError(exchange, 404, "Task not found");
                     return;
@@ -137,13 +157,14 @@ public class ApiHandler {
                         LocalDateTime.parse(requiredString(body, "deadline")),
                         body.get("durationMinutes").getAsInt(),
                         Weights.valueOf(requiredString(body, "importance").toUpperCase()),
-                        Weights.valueOf(requiredString(body, "effort").toUpperCase()));
+                        Weights.valueOf(requiredString(body, "effort").toUpperCase()),
+                        userId);
                 sendJson(exchange, 201, taskJson(task));
                 return;
             }
 
             if ("PUT".equals(method) && id != null) {
-                Task task = taskManager.getTaskById(id);
+                Task task = taskManager.getTaskById(id, userId);
                 if (task == null) {
                     sendError(exchange, 404, "Task not found");
                     return;
@@ -159,13 +180,13 @@ public class ApiHandler {
                 if (body.has("status")) {
                     task.setStatus(TaskStatus.valueOf(body.get("status").getAsString().toUpperCase()));
                 }
-                taskManager.updateTask(task);
+                taskManager.updateTask(task, userId);
                 sendJson(exchange, 200, taskJson(task));
                 return;
             }
 
             if ("DELETE".equals(method) && id != null) {
-                taskManager.deleteTask(id);
+                taskManager.deleteTask(id, userId);
 
                 JsonObject response = new JsonObject();
                 response.addProperty("deleted", true);
@@ -193,6 +214,9 @@ public class ApiHandler {
         }
 
         try {
+            String userId = requireUserId(exchange);
+            if (userId == null) return;
+
             JsonObject body = readBody(exchange);
             String strategyName = requiredString(body, "strategy").toLowerCase();
             SchedulingStrategy strategy;
@@ -225,7 +249,7 @@ public class ApiHandler {
                     : null;
 
             Scheduler scheduler = new Scheduler(strategy, start, end);
-            Schedule schedule = scheduler.generateSchedule(taskManager.getAllTasks(), scheduleStart);
+            Schedule schedule = scheduler.generateSchedule(taskManager.getAllTasks(userId), scheduleStart);
 
             JsonObject response = new JsonObject();
             response.addProperty("strategy", strategy.getStrategyName());
@@ -258,6 +282,9 @@ public class ApiHandler {
         }
 
         try {
+            String userId = requireUserId(exchange);
+            if (userId == null) return;
+
             JsonObject body = readBody(exchange);
 
             String strategyAName = requiredString(body, "strategyA").toLowerCase();
@@ -281,9 +308,9 @@ public class ApiHandler {
                     : null;
 
             Schedule scheduleA = new Scheduler(strategyA, start, end)
-                    .generateSchedule(taskManager.getAllTasks(), scheduleStart);
+                    .generateSchedule(taskManager.getAllTasks(userId), scheduleStart);
             Schedule scheduleB = new Scheduler(strategyB, start, end)
-                    .generateSchedule(taskManager.getAllTasks(), scheduleStart);
+                    .generateSchedule(taskManager.getAllTasks(userId), scheduleStart);
 
             ComparisonResult comparison = new Comparison(scheduleA, scheduleB, focus).compare();
 
@@ -300,6 +327,112 @@ public class ApiHandler {
             e.printStackTrace();
             sendError(exchange, 500, "Unexpected server error");
         }
+    }
+
+    public void handleNotes(HttpExchange exchange) throws IOException {
+        if (preflight(exchange)) return;
+        String userId = requireUserId(exchange);
+        if (userId == null) return;
+
+        try {
+            String method = exchange.getRequestMethod();
+            String id = resourceId(exchange.getRequestURI(), "/api/notes");
+
+            if ("GET".equals(method) && id == null) {
+                sendJson(exchange, 200, noteDB.findAll(userId));
+                return;
+            }
+
+            if ("POST".equals(method) && id == null) {
+                JsonObject body = readBody(exchange);
+                Note note = new Note(userId, requiredString(body, "title"),
+                    requiredString(body, "body"), optionalString(body, "tag").isBlank()
+                        ? "General" : optionalString(body, "tag"));
+                sendJson(exchange, 201, noteDB.add(note));
+                return;
+            }
+
+            if ("PUT".equals(method) && id != null) {
+                JsonObject body = readBody(exchange);
+                Note note = noteDB.update(id, userId, requiredString(body, "title"),
+                    requiredString(body, "body"), optionalString(body, "tag").isBlank()
+                        ? "General" : optionalString(body, "tag"));
+                if (note == null) {
+                    sendError(exchange, 404, "Note not found");
+                } else {
+                    sendJson(exchange, 200, note);
+                }
+                return;
+            }
+
+            if ("DELETE".equals(method) && id != null) {
+                if (!noteDB.remove(id, userId)) {
+                    sendError(exchange, 404, "Note not found");
+                } else {
+                    JsonObject response = new JsonObject();
+                    response.addProperty("deleted", true);
+                    sendJson(exchange, 200, response);
+                }
+                return;
+            }
+
+            sendError(exchange, 405, "Method not allowed");
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 400, e.getMessage());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            sendError(exchange, 500, "Unexpected server error");
+        }
+    }
+
+    public void handleSettings(HttpExchange exchange) throws IOException {
+        if (preflight(exchange)) return;
+        String userId = requireUserId(exchange);
+        if (userId == null) return;
+
+        try {
+            if ("GET".equals(exchange.getRequestMethod())) {
+                sendJson(exchange, 200, userSettingsDB.findOrCreate(userId));
+                return;
+            }
+
+            if ("PUT".equals(exchange.getRequestMethod())) {
+                JsonObject body = readBody(exchange);
+                String theme = requiredString(body, "theme");
+                String strategy = requiredString(body, "defaultStrategy");
+                int focusMinutes = body.get("defaultFocusMinutes").getAsInt();
+                boolean dailyReminder = body.get("dailyReminder").getAsBoolean();
+
+                if (!theme.equals("light") && !theme.equals("dark")) {
+                    throw new IllegalArgumentException("Invalid theme");
+                }
+                if (!List.of("deadline", "focus", "slack", "balance").contains(strategy)) {
+                    throw new IllegalArgumentException("Invalid strategy");
+                }
+                if (!List.of(30, 45, 60, 90).contains(focusMinutes)) {
+                    throw new IllegalArgumentException("Invalid focus duration");
+                }
+
+                sendJson(exchange, 200, userSettingsDB.save(
+                    new UserSettings(userId, theme, strategy, focusMinutes, dailyReminder)));
+                return;
+            }
+
+            sendError(exchange, 405, "Method not allowed");
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 400, e.getMessage());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            sendError(exchange, 500, "Unexpected server error");
+        }
+    }
+
+    private String resourceId(URI uri, String base) {
+        String path = uri.getPath();
+        if (path.equals(base) || path.equals(base + "/")) return null;
+        if (!path.startsWith(base + "/")) return null;
+        String id = path.substring((base + "/").length());
+        return id.isBlank() || id.contains("/") ? null : id;
     }
 
     private SchedulingStrategy createStrategy(String strategyName, Category focus) {
@@ -325,6 +458,22 @@ public class ApiHandler {
         json.addProperty("weightedLateness", metrics.getWeightedLateness());
         json.addProperty("focusAlignment", metrics.getFocusAlignment());
         return json;
+    }
+
+    private String requireUserId(HttpExchange exchange) throws IOException {
+        String authorization = exchange.getRequestHeaders().getFirst("Authorization");
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            sendError(exchange, 401, "Authentication required");
+            return null;
+        }
+
+        String token = authorization.substring("Bearer ".length()).trim();
+        String userId = sessionManager.getUserId(token);
+        if (userId == null) {
+            sendError(exchange, 401, "Invalid or expired session");
+            return null;
+        }
+        return userId;
     }
 
     private JsonObject userJson(User user) {
@@ -391,7 +540,7 @@ public class ApiHandler {
     private void addCors(HttpExchange exchange) {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "http://localhost:5173");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
     }
 
     private void sendError(HttpExchange exchange, int status, String message) throws IOException {
