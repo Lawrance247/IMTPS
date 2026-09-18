@@ -55,15 +55,10 @@ export default function SettingsPage() {
   );
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
-  const [defaultStrategy, setDefaultStrategy] = useState<Strategy>(
-    () => (localStorage.getItem("imtps.defaultStrategy") as Strategy) || "focus",
-  );
-  const [defaultFocusMinutes, setDefaultFocusMinutes] = useState<FocusMinutes>(
-    () => (localStorage.getItem("imtps.defaultFocusMinutes") as FocusMinutes) || "60",
-  );
-  const [dailyReminder, setDailyReminder] = useState(
-    () => localStorage.getItem("imtps.dailyReminder") !== "false",
-  );
+  const [defaultStrategy, setDefaultStrategy] = useState<Strategy>("focus");
+  const [defaultFocusMinutes, setDefaultFocusMinutes] = useState<FocusMinutes>("60");
+  const [dailyReminder, setDailyReminder] = useState(true);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     const root = document.documentElement;
@@ -93,6 +88,7 @@ export default function SettingsPage() {
 
   async function saveSettings() {
     try {
+      setSaveError("");
       const response = await fetch(`${API_BASE_URL}/settings`, {
         method: "PUT",
         headers: authHeaders(true),
@@ -104,16 +100,15 @@ export default function SettingsPage() {
         }),
       });
 
-      if (!response.ok) return;
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? "Could not save settings.");
+      }
 
-      // Keep these small local copies because Schedule and Focus use them immediately.
-      localStorage.setItem("imtps.defaultStrategy", defaultStrategy);
-      localStorage.setItem("imtps.defaultFocusMinutes", defaultFocusMinutes);
-      localStorage.setItem("imtps.dailyReminder", String(dailyReminder));
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1800);
-    } catch {
-      // Leave the form unchanged so the user can try saving again.
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not save settings.");
     }
   }
 
@@ -133,6 +128,8 @@ export default function SettingsPage() {
           {saved ? "Saved" : "Save changes"}
         </button>
       </header>
+
+      {saveError && <p>{saveError}</p>}
 
       <div className="settings-layout">
         <aside className="settings-nav">

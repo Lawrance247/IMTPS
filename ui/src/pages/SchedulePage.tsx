@@ -57,6 +57,22 @@ export default function SchedulePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    async function loadDefaultStrategy() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings`, { headers: authHeaders() });
+        if (!response.ok) return;
+        const settings = await response.json();
+        if (["deadline", "focus", "slack", "balance"].includes(settings.defaultStrategy)) {
+          setStrategy(settings.defaultStrategy as Strategy);
+        }
+      } catch {
+        // Keep the normal focus default if settings cannot be loaded.
+      }
+    }
+    loadDefaultStrategy();
+  }, []);
+
+  useEffect(() => {
     generateSchedule();
   }, [strategy, selectedDate, focusCategory]);
 
@@ -112,18 +128,6 @@ export default function SchedulePage() {
 
       const data: ScheduleResponse = await response.json();
       setSchedule(data.items);
-
-      const selectedPlan = {
-        strategy,
-        strategyName: strategies.find((item) => item.id === strategy)?.name ?? data.strategy,
-        focusCategory,
-        date: dateForApi(selectedDate),
-        items: data.items,
-        totalScheduledMinutes: data.totalScheduledMinutes,
-        deadlineClashes: data.deadlineClashes,
-      };
-
-      localStorage.setItem("imtps.currentSchedule", JSON.stringify(selectedPlan));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate schedule");
     } finally {
@@ -177,6 +181,7 @@ export default function SchedulePage() {
             <input
               ref={dateInputRef}
               className="schedule-date-picker"
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
               type="date"
               value={dateForApi(selectedDate)}
               onChange={(event) => {
