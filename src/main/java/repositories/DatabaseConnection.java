@@ -14,8 +14,6 @@ import java.sql.Statement;
  */
 public class DatabaseConnection {
 
-    // Location of the SQLite database.
-    // If imtps.db does not exist, SQLite will create it automatically.
     private static final String DATABASE_URL = "jdbc:sqlite:imtps.db";
 
     /**
@@ -25,18 +23,35 @@ public class DatabaseConnection {
      * @throws SQLException if the connection cannot be opened
      */
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DATABASE_URL);
+        Connection connection = DriverManager.getConnection(DATABASE_URL);
+
+        // SQLite does not enforce foreign keys unless this is enabled
+        // for each database connection.
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("PRAGMA foreign_keys = ON");
+        }
+
+        return connection;
     }
 
     /**
-     * Sets up the database when the application starts.
-     * The tasks table is only created if it does not already exist,
-     * so existing task data will not be deleted.
+     * Sets up the tables needed by the application.
+     * Existing data is kept because each table uses IF NOT EXISTS.
      */
     public static void initializeDatabase() {
 
-        // SQL statement used to create the table that stores tasks.
-        String sql =
+        String usersTable =
+            "CREATE TABLE IF NOT EXISTS users (" +
+            "id TEXT PRIMARY KEY, " +
+            "full_name TEXT NOT NULL, " +
+            "email TEXT NOT NULL UNIQUE, " +
+            "password_hash TEXT NOT NULL, " +
+            "created_at TEXT NOT NULL DEFAULT (datetime('now'))" +
+            ")";
+
+        // Keep the current task table unchanged for now.
+        // We will link tasks to users after authentication is working.
+        String tasksTable =
             "CREATE TABLE IF NOT EXISTS tasks (" +
             "id TEXT PRIMARY KEY, " +
             "title TEXT NOT NULL, " +
@@ -49,25 +64,16 @@ public class DatabaseConnection {
             "status TEXT NOT NULL" +
             ")";
 
-        /*
-         * try-with-resources automatically closes the database
-         * connection and statement when this block finishes.
-         */
         try (
             Connection connection = getConnection();
             Statement statement = connection.createStatement()
         ) {
-
-            // Create the tasks table if this is the first time
-            // the application is using the database.
-            statement.execute(sql);
+            statement.execute(usersTable);
+            statement.execute(tasksTable);
 
             System.out.println("Database initialized successfully.");
 
         } catch (SQLException e) {
-
-            // Stop initialization and keep the original SQL error
-            // available so that the cause can be diagnosed.
             throw new RuntimeException(
                 "Could not initialize database.",
                 e

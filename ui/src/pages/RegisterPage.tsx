@@ -3,16 +3,23 @@ import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./RegisterPage.css";
 
+type ApiError = {
+  error?: string;
+};
+
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const form = new FormData(event.currentTarget);
+    const fullName = String(form.get("fullName") ?? "").trim();
+    const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
     const confirmPassword = String(form.get("confirmPassword") ?? "");
 
@@ -22,7 +29,40 @@ export default function RegisterPage() {
     }
 
     setError("");
-    navigate("/today");
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        const body: ApiError = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Could not create your account.");
+      }
+
+      navigate("/login", {
+        state: {
+          registeredEmail: email,
+        },
+      });
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not create your account.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -71,7 +111,7 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   name="fullName"
-                  placeholder="e.g. Lawrence Mavimbela"
+                  placeholder="Enter your full name"
                   autoComplete="name"
                   required
                 />
@@ -85,7 +125,7 @@ export default function RegisterPage() {
                 <input
                   type="email"
                   name="email"
-                  placeholder="you@uct.ac.za"
+                  placeholder="Enter your email"
                   autoComplete="email"
                   required
                 />
@@ -101,7 +141,7 @@ export default function RegisterPage() {
                   name="password"
                   placeholder="Create a password"
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={8}
                   required
                 />
                 <button
@@ -124,7 +164,7 @@ export default function RegisterPage() {
                   name="confirmPassword"
                   placeholder="Enter your password again"
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={8}
                   required
                 />
                 <button
@@ -140,17 +180,13 @@ export default function RegisterPage() {
 
             {error && <p className="register-error">{error}</p>}
 
-            <button className="register-submit" type="submit">
-              Create Account
+            <button className="register-submit" type="submit" disabled={submitting}>
+              {submitting ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
           <p className="register-signin">
             Already have an account? <Link to="/login">Sign in</Link>
-          </p>
-
-          <p className="register-note">
-            Your account will later connect to the IMTPS backend and database.
           </p>
         </div>
       </section>

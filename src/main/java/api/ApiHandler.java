@@ -24,6 +24,8 @@ import models.Task;
 import services.Comparison;
 import services.Scheduler;
 import services.TaskManager;
+import taskmanagement.AuthManager;
+import taskmanagement.User;
 import strategies.CategoryBalanceStrategy;
 import strategies.EarliestDeadlineFirstStrategy;
 import strategies.SchedulingStrategy;
@@ -35,10 +37,61 @@ import utils.Weights;
 
 public class ApiHandler {
     private final TaskManager taskManager;
+    private final AuthManager authManager;
     private final Gson gson = new Gson();
 
     public ApiHandler(TaskManager taskManager) {
+        this(taskManager, new AuthManager());
+    }
+
+    public ApiHandler(TaskManager taskManager, AuthManager authManager) {
         this.taskManager = taskManager;
+        this.authManager = authManager;
+    }
+
+    public void handleRegister(HttpExchange exchange) throws IOException {
+        if (preflight(exchange)) return;
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+
+        try {
+            JsonObject body = readBody(exchange);
+            User user = authManager.register(
+                    requiredString(body, "fullName"),
+                    requiredString(body, "email"),
+                    requiredString(body, "password"));
+
+            sendJson(exchange, 201, userJson(user));
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 400, e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(exchange, 500, "Unexpected server error");
+        }
+    }
+
+    public void handleLogin(HttpExchange exchange) throws IOException {
+        if (preflight(exchange)) return;
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+
+        try {
+            JsonObject body = readBody(exchange);
+            User user = authManager.login(
+                    requiredString(body, "email"),
+                    requiredString(body, "password"));
+
+            sendJson(exchange, 200, userJson(user));
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 401, e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(exchange, 500, "Unexpected server error");
+        }
     }
 
     public void handleHealth(HttpExchange exchange) throws IOException {
@@ -271,6 +324,15 @@ public class ApiHandler {
         json.addProperty("averageSlack", metrics.getAverageSlack());
         json.addProperty("weightedLateness", metrics.getWeightedLateness());
         json.addProperty("focusAlignment", metrics.getFocusAlignment());
+        return json;
+    }
+
+    private JsonObject userJson(User user) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", user.getId());
+        json.addProperty("fullName", user.getFullName());
+        json.addProperty("email", user.getEmail());
+        json.addProperty("createdAt", user.getCreatedAt().toString());
         return json;
     }
 

@@ -15,6 +15,8 @@ public class Application {
         ApiHandler apiHandler = new ApiHandler(taskManager);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        server.createContext("/api/auth/register", apiHandler::handleRegister);
+        server.createContext("/api/auth/login", apiHandler::handleLogin);
         server.createContext("/api/tasks", apiHandler::handleTasks);
         server.createContext("/api/schedules/generate", apiHandler::handleSchedule);
         server.createContext("/api/schedules/compare", apiHandler::handleComparison);

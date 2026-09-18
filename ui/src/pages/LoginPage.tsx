@@ -3,13 +3,63 @@ import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./LoginPage.css";
 
+type LoggedInUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  createdAt: string;
+};
+
+type ApiError = {
+  error?: string;
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    navigate("/today");
+
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    const password = String(form.get("password") ?? "");
+
+    setError("");
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        const body: ApiError = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Invalid email or password.");
+      }
+
+      const user: LoggedInUser = await response.json();
+
+      localStorage.setItem("imtps.currentUser", JSON.stringify(user));
+      navigate("/today");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not sign in.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -61,7 +111,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   name="email"
-                  placeholder="you@uct.ac.za"
+                  placeholder="Enter your email"
                   autoComplete="email"
                   required
                 />
@@ -90,19 +140,10 @@ export default function LoginPage() {
               </div>
             </label>
 
-            <div className="login-options">
-              <label className="remember-me">
-                <input type="checkbox" />
-                <span>Remember me</span>
-              </label>
+            {error && <p className="login-error">{error}</p>}
 
-              <button type="button" className="forgot-password">
-                Forgot password?
-              </button>
-            </div>
-
-            <button className="login-submit" type="submit">
-              Sign In
+            <button className="login-submit" type="submit" disabled={submitting}>
+              {submitting ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
