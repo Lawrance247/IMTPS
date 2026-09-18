@@ -342,3 +342,29 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.insights-error {
+  margin-bottom: 16px;
+  color: var(--danger, #c24141);
+}
+
+.balance-summary {
+  margin: 28px auto 24px;
+  text-align: center;
+}
+
+.balance-summary strong,
+.balance-summary span {
+  display: block;
+}
+
+.balance-summary strong {
+  font-size: 1.7rem;
+}
+
+.balance-summary span {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: .7rem;
+}
