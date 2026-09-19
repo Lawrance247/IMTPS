@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../config";
-import { authHeaders } from "../auth";
+import { authHeaders, handleUnauthorized } from "../auth";
 export type Category = "ACADEMIC" | "FAMILY" | "HEALTH" | "LEISURE";
 export type Weight = "LOW" | "MEDIUM" | "HIGH";
 export type TaskStatus = "TO_DO" | "IN_PROGRESS" | "DONE";
@@ -40,6 +40,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    if (handleUnauthorized(response)) throw new Error("Your session has expired.");
+
     const body = await response.json().catch(() => ({ error: "Request failed" }));
     throw new Error(body.error || "Request failed");
   }

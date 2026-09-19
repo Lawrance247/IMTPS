@@ -10,6 +10,8 @@ import {
   Settings,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../config";
+import { authHeaders, clearAuth } from "../../auth";
 import "./Sidebar.css";
 
 type LoggedInUser = {
@@ -52,10 +54,17 @@ export default function Sidebar() {
   const currentUser = loadCurrentUser();
   const displayName = currentUser?.fullName || "User";
 
-  function signOut() {
-    localStorage.removeItem("imtps.authToken");
-    localStorage.removeItem("imtps.currentUser");
-    localStorage.removeItem("imtps.currentSchedule");
+  async function signOut() {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+    } catch {
+      // The local session is cleared either way.
+    }
+
+    clearAuth();
     navigate("/login", { replace: true });
   }
 

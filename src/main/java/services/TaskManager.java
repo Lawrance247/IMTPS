@@ -96,14 +96,14 @@ public class TaskManager
      */
     public void updateTask(Task task) 
     {
-        validateDeadline(task.getDeadline());
+        requireDeadline(task.getDeadline());
         validateTaskFields(task.getTitle(), task.getCategory(), task.getDurationMinutes(), task.getImportance(), task.getEffort());
         taskDB.update(task);
     }
 
     public void updateTask(Task task, String userId)
     {
-        validateDeadline(task.getDeadline());
+        requireDeadline(task.getDeadline());
         validateTaskFields(task.getTitle(), task.getCategory(), task.getDurationMinutes(), task.getImportance(), task.getEffort());
         taskDB.update(task, userId);
     }
@@ -142,13 +142,26 @@ public class TaskManager
      */
     private void validateDeadline(LocalDateTime deadline) 
     {
-        if (deadline == null) 
-        {
-            throw new IllegalArgumentException("Deadline cannot be null");
-        }
+        requireDeadline(deadline);
         if (deadline.isBefore(LocalDateTime.now())) 
         {
             throw new IllegalArgumentException("Deadline cannot be in the past");
+        }
+    }
+
+
+    /**
+     * helper used when saving an existing task, where a deadline that has
+     * already passed must still be storable
+     *
+     * @param deadline the deadline to check
+     * @throws IllegalArgumentException if {@code deadline} is {@code null}
+     */
+    private void requireDeadline(LocalDateTime deadline)
+    {
+        if (deadline == null) 
+        {
+            throw new IllegalArgumentException("Deadline cannot be null");
         }
     }
 

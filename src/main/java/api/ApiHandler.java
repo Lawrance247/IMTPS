@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -25,6 +28,9 @@ import services.Comparison;
 import services.Scheduler;
 import services.TaskManager;
 import repositories.NoteDB;
+import repositories.ScheduleDB;
+import repositories.ScheduleDB.SavedItem;
+import repositories.ScheduleDB.SavedSchedule;
 import repositories.UserSettingsDB;
 import taskmanagement.Note;
 import taskmanagement.UserSettings;
@@ -41,10 +47,12 @@ import utils.TaskStatus;
 import utils.Weights;
 
 public class ApiHandler {
+    private static final int MAX_REQUEST_BODY_BYTES = 64 * 1024;
     private final TaskManager taskManager;
     private final AuthManager authManager;
     private final SessionManager sessionManager;
     private final NoteDB noteDB = new NoteDB();
+    private final ScheduleDB scheduleDB = new ScheduleDB();
     private final UserSettingsDB userSettingsDB = new UserSettingsDB();
     private final Gson gson = new Gson();
 
@@ -105,6 +113,28 @@ public class ApiHandler {
             sendJson(exchange, 200, response);
         } catch (IllegalArgumentException e) {
             sendError(exchange, 401, e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(exchange, 500, "Unexpected server error");
+        }
+    }
+
+    public void handleLogout(HttpExchange exchange) throws IOException {
+        if (preflight(exchange)) return;
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+
+        try {
+            String authorization = exchange.getRequestHeaders().getFirst("Authorization");
+            if (authorization != null && authorization.startsWith("Bearer ")) {
+                sessionManager.removeSession(authorization.substring("Bearer ".length()).trim());
+            }
+
+            JsonObject response = new JsonObject();
+            response.addProperty("loggedOut", true);
+            sendJson(exchange, 200, response);
         } catch (Exception e) {
             e.printStackTrace();
             sendError(exchange, 500, "Unexpected server error");
@@ -265,6 +295,10 @@ public class ApiHandler {
             response.add("items", gson.toJsonTree(items));
             response.addProperty("totalScheduledMinutes", schedule.getTotalScheduledMinutes());
             response.addProperty("deadlineClashes", schedule.getDeadlineClashes().size());
+
+            LocalDateTime savedStart = scheduleStart != null ? scheduleStart : LocalDateTime.now();
+            scheduleDB.save(userId, strategyName, strategy.getStrategyName(), focus.name(),
+                    savedStart.toLocalDate(), schedule);
             sendJson(exchange, 200, response);
         } catch (IllegalArgumentException e) {
             sendError(exchange, 400, e.getMessage());
@@ -329,6 +363,96 @@ public class ApiHandler {
         }
     }
 
+    public void handleCurrentSchedule(HttpExchange exchange) throws IOException {
+        if (preflight(exchange)) return;
+        String method = exchange.getRequestMethod();
+        if (!"GET".equals(method) && !"PUT".equals(method)) {
+            sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+        String userId = requireUserId(exchange);
+        if (userId == null) return;
+        try {
+            LocalDate requestedDate = queryDate(exchange.getRequestURI());
+
+            if ("PUT".equals(method)) {
+                JsonObject body = readBody(exchange);
+                Category focus = Category.valueOf(requiredString(body, "focusCategory").toUpperCase());
+                LocalDate targetDate = requestedDate != null
+                        ? requestedDate
+                        : savedScheduleDate(userId);
+
+                if (targetDate == null || !scheduleDB.updateFocusCategory(userId, targetDate, focus.name())) {
+                    sendError(exchange, 404, "No saved schedule");
+                    return;
+                }
+
+                JsonObject response = new JsonObject();
+                response.addProperty("focusCategory", focus.name());
+                response.addProperty("date", targetDate.toString());
+                sendJson(exchange, 200, response);
+                return;
+            }
+
+            SavedSchedule saved = requestedDate != null
+                    ? scheduleDB.findByDate(userId, requestedDate)
+                    : scheduleDB.findLatest(userId);
+            if (saved == null) {
+                sendError(exchange, 404, "No saved schedule");
+                return;
+            }
+            JsonObject response = new JsonObject();
+            response.addProperty("strategy", saved.strategy);
+            response.addProperty("strategyName", saved.strategyName);
+            response.addProperty("focusCategory", saved.focusCategory);
+            response.addProperty("date", saved.date);
+            response.addProperty("totalScheduledMinutes", saved.totalScheduledMinutes);
+            response.addProperty("deadlineClashes", saved.deadlineClashes);
+            List<JsonObject> items = new ArrayList<>();
+            for (SavedItem savedItem : saved.items) {
+                JsonObject task = new JsonObject();
+                task.addProperty("id", savedItem.taskId);
+                task.addProperty("title", savedItem.title);
+                task.addProperty("category", savedItem.category);
+                task.addProperty("durationMinutes", savedItem.durationMinutes);
+                JsonObject item = new JsonObject();
+                item.add("task", task);
+                item.addProperty("startTime", savedItem.startTime);
+                item.addProperty("endTime", savedItem.endTime);
+                item.addProperty("deadlineClash", savedItem.deadlineClash);
+                items.add(item);
+            }
+            response.add("items", gson.toJsonTree(items));
+            sendJson(exchange, 200, response);
+        } catch (IllegalArgumentException | DateTimeParseException e) {
+            sendError(exchange, 400, e.getMessage());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            sendError(exchange, 500, "Unexpected server error");
+        }
+    }
+
+    private LocalDate queryDate(URI uri) {
+        String query = uri.getQuery();
+        if (query == null || query.isBlank()) return null;
+
+        for (String pair : query.split("&")) {
+            int separator = pair.indexOf('=');
+            if (separator < 0) continue;
+            if (!"date".equals(pair.substring(0, separator))) continue;
+
+            String value = URLDecoder.decode(pair.substring(separator + 1), StandardCharsets.UTF_8);
+            if (value.isBlank()) return null;
+            return LocalDate.parse(value);
+        }
+        return null;
+    }
+
+    private LocalDate savedScheduleDate(String userId) {
+        SavedSchedule saved = scheduleDB.findLatest(userId);
+        return saved == null ? null : LocalDate.parse(saved.date);
+    }
+
     public void handleNotes(HttpExchange exchange) throws IOException {
         if (preflight(exchange)) return;
         String userId = requireUserId(exchange);
@@ -339,7 +463,9 @@ public class ApiHandler {
             String id = resourceId(exchange.getRequestURI(), "/api/notes");
 
             if ("GET".equals(method) && id == null) {
-                sendJson(exchange, 200, noteDB.findAll(userId));
+                List<JsonObject> notes = new ArrayList<>();
+                for (Note note : noteDB.findAll(userId)) notes.add(noteJson(note));
+                sendJson(exchange, 200, notes);
                 return;
             }
 
@@ -348,7 +474,7 @@ public class ApiHandler {
                 Note note = new Note(userId, requiredString(body, "title"),
                     requiredString(body, "body"), optionalString(body, "tag").isBlank()
                         ? "General" : optionalString(body, "tag"));
-                sendJson(exchange, 201, noteDB.add(note));
+                sendJson(exchange, 201, noteJson(noteDB.add(note)));
                 return;
             }
 
@@ -360,7 +486,7 @@ public class ApiHandler {
                 if (note == null) {
                     sendError(exchange, 404, "Note not found");
                 } else {
-                    sendJson(exchange, 200, note);
+                    sendJson(exchange, 200, noteJson(note));
                 }
                 return;
             }
@@ -485,6 +611,17 @@ public class ApiHandler {
         return json;
     }
 
+    private JsonObject noteJson(Note note) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", note.getId());
+        json.addProperty("title", note.getTitle());
+        json.addProperty("body", note.getBody());
+        json.addProperty("tag", note.getTag());
+        json.addProperty("createdAt", note.getCreatedAt().toString());
+        json.addProperty("updatedAt", note.getUpdatedAt().toString());
+        return json;
+    }
+
     private JsonObject taskJson(Task task) {
         JsonObject json = new JsonObject();
         json.addProperty("id", task.getId());
@@ -510,7 +647,12 @@ public class ApiHandler {
 
     private JsonObject readBody(HttpExchange exchange) throws IOException {
         try (InputStream input = exchange.getRequestBody()) {
-            String text = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            byte[] bytes = input.readNBytes(MAX_REQUEST_BODY_BYTES + 1);
+            if (bytes.length > MAX_REQUEST_BODY_BYTES) {
+                throw new IllegalArgumentException("Request body is too large");
+            }
+
+            String text = new String(bytes, StandardCharsets.UTF_8);
             if (text.isBlank()) throw new IllegalArgumentException("Request body is required");
             return JsonParser.parseString(text).getAsJsonObject();
         }
@@ -553,6 +695,8 @@ public class ApiHandler {
         addCors(exchange);
         byte[] bytes = gson.toJson(value).getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+        exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        exchange.getResponseHeaders().set("Cache-Control", "no-store");
         exchange.sendResponseHeaders(status, bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
             output.write(bytes);

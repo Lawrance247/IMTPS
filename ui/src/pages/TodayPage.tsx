@@ -66,16 +66,7 @@ export default function TodayPage() {
   const [showFocusPicker, setShowFocusPicker] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
-  const [currentSchedule, setCurrentSchedule] = useState<CurrentSchedule | null>(() => {
-    const saved = localStorage.getItem("imtps.currentSchedule");
-    if (!saved) return null;
-
-    try {
-      return JSON.parse(saved) as CurrentSchedule;
-    } catch {
-      return null;
-    }
-  });
+  const [currentSchedule, setCurrentSchedule] = useState<CurrentSchedule | null>(null);
 
   const currentUser = (() => {
     const saved = localStorage.getItem("imtps.currentUser");
@@ -108,6 +99,24 @@ export default function TodayPage() {
   const schedule = fullSchedule.filter(
     (item) => !completedTaskIds.has(item.task.id),
   );
+
+  useEffect(() => {
+    async function loadSavedSchedule() {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/schedules/current?date=${todayDate}`,
+          { headers: authHeaders() },
+        );
+        if (response.status === 404) return;
+        if (!response.ok) return;
+        const saved: CurrentSchedule = await response.json();
+        setCurrentSchedule(saved);
+      } catch {
+        // The rest of Today can still load without a saved schedule.
+      }
+    }
+    loadSavedSchedule();
+  }, [todayDate]);
 
   useEffect(() => {
     async function loadTaskStatuses() {
@@ -145,7 +154,7 @@ export default function TodayPage() {
       <header className="today-header">
         <div>
           <span className="today-date">{displayDate}</span>
-          <h1>{greeting}, {firstName} <span aria-hidden="true">👋</span></h1>
+          <h1>{greeting}, {firstName}</h1>
           <p>Small steps today, big results tomorrow.</p>
         </div>
         <button className="today-add-task" onClick={() => setShowAddTask(true)}>+ Add Task</button>
@@ -299,21 +308,29 @@ export default function TodayPage() {
                 <span>Focus category</span>
                 <select
                   defaultValue={currentSchedule?.focusCategory ?? "ACADEMIC"}
-                  onChange={(event) => {
+                  onChange={async (event) => {
                     if (!currentSchedule) return;
 
-                    const updatedSchedule = {
-                      ...currentSchedule,
-                      focusCategory: event.target.value,
-                    };
+                    const focusCategory = event.target.value;
+                    const previousSchedule = currentSchedule;
 
-                    localStorage.setItem(
-                      "imtps.currentSchedule",
-                      JSON.stringify(updatedSchedule),
-                    );
-
-                    setCurrentSchedule(updatedSchedule);
+                    setCurrentSchedule({ ...currentSchedule, focusCategory });
                     setShowFocusPicker(false);
+
+                    try {
+                      const response = await fetch(
+                        `${API_BASE_URL}/schedules/current?date=${currentSchedule.date}`,
+                        {
+                          method: "PUT",
+                          headers: authHeaders(true),
+                          body: JSON.stringify({ focusCategory }),
+                        },
+                      );
+
+                      if (!response.ok) throw new Error("Could not save focus category");
+                    } catch {
+                      setCurrentSchedule(previousSchedule);
+                    }
                   }}
                 >
                   <option value="ACADEMIC">Academic</option>

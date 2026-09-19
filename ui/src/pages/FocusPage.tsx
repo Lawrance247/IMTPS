@@ -91,20 +91,26 @@ export default function FocusPage() {
   }, [totalSeconds, selectedTask?.id]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("imtps.currentSchedule");
-    if (!saved || !selectedTask) {
-      setNextTask(null);
-      return;
+    async function loadNextTask() {
+      if (!selectedTask) {
+        setNextTask(null);
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/schedules/current`, { headers: authHeaders() });
+        if (!response.ok) {
+          setNextTask(null);
+          return;
+        }
+        const plan = await response.json() as { items?: ScheduledItem[] };
+        const items = plan.items ?? [];
+        const currentIndex = items.findIndex((item) => item.task.id === selectedTask.id);
+        setNextTask(currentIndex >= 0 ? items[currentIndex + 1] ?? null : null);
+      } catch {
+        setNextTask(null);
+      }
     }
-
-    try {
-      const plan = JSON.parse(saved) as { items?: ScheduledItem[] };
-      const items = plan.items ?? [];
-      const currentIndex = items.findIndex((item) => item.task.id === selectedTask.id);
-      setNextTask(currentIndex >= 0 ? items[currentIndex + 1] ?? null : null);
-    } catch {
-      setNextTask(null);
-    }
+    loadNextTask();
   }, [selectedTask?.id]);
 
   useEffect(() => {
