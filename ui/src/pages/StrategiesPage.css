@@ -1,0 +1,130 @@
+.strategies-page {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 34px 40px 60px;
+}
+
+.strategies-header {
+  margin-bottom: 28px;
+}
+
+.strategies-header > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #648cff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.strategies-header h1 {
+  margin: 0 0 10px;
+  font-size: 2.5rem;
+}
+
+.strategies-header p {
+  max-width: 700px;
+  margin: 0;
+  color: #91a4c0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.strategies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.strategy-section {
+  padding: 24px 26px;
+  border: 1px solid #22334e;
+  border-radius: 14px;
+  background: #101d31;
+}
+
+.strategy-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #22334e;
+}
+
+.strategy-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #182b4b;
+  color: #6f94ff;
+}
+
+.strategy-title h2 {
+  margin: 1px 0 6px;
+  font-size: 1.28rem;
+}
+
+.strategy-title p {
+  max-width: 760px;
+  margin: 0;
+  color: #91a4c0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.strategy-information {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 35px;
+  padding-top: 19px;
+}
+
+.strategy-information h3 {
+  margin: 0 0 10px;
+  color: #dce5f4;
+  font-size: 0.9rem;
+}
+
+.strategy-information ul {
+  margin: 0;
+  padding-left: 19px;
+  color: #91a4c0;
+}
+
+.strategy-information li {
+  margin-bottom: 6px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.strategy-best-for {
+  padding-left: 24px;
+  border-left: 1px solid #22334e;
+}
+
+.strategy-best-for p {
+  margin: 0;
+  color: #91a4c0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 720px) {
+  .strategies-page {
+    padding: 26px 20px 45px;
+  }
+
+  .strategy-information {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .strategy-best-for {
+    padding: 0;
+    border-left: 0;
+  }
+}
